@@ -588,13 +588,10 @@ select.form-input {
 .auth-overlay {
   position: fixed; inset: 0; z-index: 200;
   background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-  display: flex; align-items: center; justify-content: center;
+  display: none; align-items: center; justify-content: center;
   padding: 20px;
-  opacity: 0; pointer-events: none;
-  transition: opacity 0.3s;
 }
-.auth-overlay.open { opacity: 1; pointer-events: auto; }
+.auth-overlay.open { display: flex; }
 .auth-modal {
   width: 100%; max-width: 400px;
   background: var(--bg-card);
@@ -602,11 +599,8 @@ select.form-input {
   border: 1px solid var(--border);
   padding: 32px 24px;
   position: relative;
-  transform: translateY(20px) scale(0.96);
-  transition: transform 0.3s;
   box-shadow: 0 20px 60px rgba(0,0,0,0.5);
 }
-.auth-overlay.open .auth-modal { transform: translateY(0) scale(1); }
 .auth-close {
   position: absolute; top: 16px; right: 16px;
   width: 32px; height: 32px;
