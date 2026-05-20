@@ -1,28 +1,26 @@
 // ============================================================
 // Cloud Module - 云端数据模块
-// 支持 LeanCloud（云端）和 localStorage（本地）双模式
+// 支持 Supabase（云端）和 localStorage（本地）双模式
 // ============================================================
 var Cloud = (function() {
   var _mode = 'local';
   var _ready = false;
   var _pendingInit = [];
+  var _supabase = null;
 
   // ===== 初始化 =====
   function init() {
-    if (typeof LC_CONFIG !== 'undefined' && LC_CONFIG.enabled && LC_CONFIG.appId && typeof AV !== 'undefined') {
+    if (typeof SUPABASE_CONFIG !== 'undefined' && SUPABASE_CONFIG.enabled &&
+        SUPABASE_CONFIG.url && SUPABASE_CONFIG.anonKey && typeof supabase !== 'undefined') {
       try {
-        AV.init({
-          appId: LC_CONFIG.appId,
-          appKey: LC_CONFIG.appKey,
-          serverURL: LC_CONFIG.serverURL
-        });
+        _supabase = supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
         _mode = 'cloud';
-        console.log('[Cloud] LeanCloud 已连接');
+        console.log('[Cloud] Supabase 已连接');
       } catch (e) {
-        console.warn('[Cloud] LeanCloud 初始化失败，使用本地模式', e);
+        console.warn('[Cloud] Supabase 初始化失败，使用本地模式', e);
       }
     } else {
-      console.log('[Cloud] 本地模式（未配置 LeanCloud）');
+      console.log('[Cloud] 本地模式（未配置 Supabase）');
     }
     _ready = true;
     for (var i = 0; i < _pendingInit.length; i++) _pendingInit[i]();
@@ -32,17 +30,19 @@ var Cloud = (function() {
   function onReady(fn) { _ready ? fn() : _pendingInit.push(fn); }
   function isCloud() { return _mode === 'cloud'; }
 
-  // ===== LeanCloud 用户 → 本地用户对象 =====
-  function avToLocal(u) {
+  // ===== Supabase 用户 → 本地用户对象 =====
+  function sbToLocal(authData, profile) {
+    var meta = (authData && authData.user && authData.user.user_metadata) || {};
     return {
-      username: u.getUsername() || u.id,
-      nick: u.get('nick') || u.getUsername() || u.get('nickname') || '用户',
-      phone: u.get('mobilePhoneNumber') || '',
-      email: u.get('email') || '',
-      avatar: u.get('avatar') || '',
-      socialType: u.get('socialType') || '',
-      isGuest: u.get('isGuest') || false,
-      joined: u.createdAt ? u.createdAt.toISOString() : new Date().toISOString(),
+      username: (authData && authData.user && authData.user.email) || meta.username || (authData && authData.user && authData.user.id) || '',
+      userId: (authData && authData.user && authData.user.id) || '',
+      nick: (profile && profile.nick) || meta.nick || meta.full_name || '用户',
+      phone: (authData && authData.user && authData.user.phone) || '',
+      email: (authData && authData.user && authData.user.email) || '',
+      avatar: (profile && profile.avatar) || meta.avatar || '',
+      socialType: (profile && profile.social_type) || meta.socialType || '',
+      isGuest: (profile && profile.is_guest) || false,
+      joined: (authData && authData.user && authData.user.created_at) || new Date().toISOString(),
       history: []
     };
   }
@@ -51,14 +51,28 @@ var Cloud = (function() {
   function signUp(username, password, attrs, cb) {
     onReady(function() {
       if (isCloud()) {
-        var user = new AV.User();
-        user.setUsername(username);
-        user.setPassword(password);
-        if (attrs.nick) user.set('nick', attrs.nick);
-        if (attrs.phone) user.setMobilePhoneNumber(attrs.phone);
-        if (attrs.email) user.setEmail(attrs.email);
-        user.signUp().then(function(u) { cb(null, avToLocal(u)); })
-          .catch(function(e) { cb(cloudErr(e)); });
+        var meta = { username: username };
+        if (attrs.nick) meta.nick = attrs.nick;
+        _supabase.auth.signUp({
+          email: username + '@tianji.local',
+          password: password,
+          data: meta
+        }).then(function(res) {
+          if (res.error) { cb(cloudErr(res.error)); return; }
+          // 创建 profile
+          if (res.data && res.data.user) {
+            _supabase.from('user_profiles').upsert({
+              id: res.data.user.id,
+              nick: attrs.nick || username
+            }).then(function() {
+              cb(null, sbToLocal(res.data, { nick: attrs.nick || username }));
+            }).catch(function() {
+              cb(null, sbToLocal(res.data, { nick: attrs.nick || username }));
+            });
+          } else {
+            cb(null, sbToLocal(res.data, {}));
+          }
+        }).catch(function(e) { cb(cloudErr(e)); });
       } else {
         cb(null, localSignUp(username, password, attrs));
       }
@@ -69,8 +83,20 @@ var Cloud = (function() {
   function logIn(username, password, cb) {
     onReady(function() {
       if (isCloud()) {
-        AV.User.logIn(username, password).then(function(u) { cb(null, avToLocal(u)); })
-          .catch(function(e) { cb(cloudErr(e)); });
+        // Try email login with stored mapping
+        var mapping = localGetEmailMapping();
+        var email = mapping[username] || username;
+        if (email.indexOf('@') === -1) email = email + '@tianji.local';
+        _supabase.auth.signInWithPassword({ email: email, password: password })
+          .then(function(res) {
+            if (res.error) { cb(cloudErr(res.error)); return; }
+            _supabase.from('user_profiles').select('*').eq('id', res.data.user.id).single()
+              .then(function(pRes) {
+                cb(null, sbToLocal(res.data, pRes.data));
+              }).catch(function() {
+                cb(null, sbToLocal(res.data, {}));
+              });
+          }).catch(function(e) { cb(cloudErr(e)); });
       } else {
         cb(null, localLogIn(username, password));
       }
@@ -80,8 +106,16 @@ var Cloud = (function() {
   function logInByPhone(phone, password, cb) {
     onReady(function() {
       if (isCloud()) {
-        AV.User.logInWithMobilePhone(phone, password).then(function(u) { cb(null, avToLocal(u)); })
-          .catch(function(e) { cb(cloudErr(e)); });
+        _supabase.auth.signInWithPassword({ phone: phone, password: password })
+          .then(function(res) {
+            if (res.error) { cb(cloudErr(res.error)); return; }
+            _supabase.from('user_profiles').select('*').eq('id', res.data.user.id).single()
+              .then(function(pRes) {
+                cb(null, sbToLocal(res.data, pRes.data));
+              }).catch(function() {
+                cb(null, sbToLocal(res.data, {}));
+              });
+          }).catch(function(e) { cb(cloudErr(e)); });
       } else {
         cb(null, localLogInByContact('phone', phone, password));
       }
@@ -91,8 +125,16 @@ var Cloud = (function() {
   function logInByEmail(email, password, cb) {
     onReady(function() {
       if (isCloud()) {
-        AV.User.logInWithEmail(email, password).then(function(u) { cb(null, avToLocal(u)); })
-          .catch(function(e) { cb(cloudErr(e)); });
+        _supabase.auth.signInWithPassword({ email: email, password: password })
+          .then(function(res) {
+            if (res.error) { cb(cloudErr(res.error)); return; }
+            _supabase.from('user_profiles').select('*').eq('id', res.data.user.id).single()
+              .then(function(pRes) {
+                cb(null, sbToLocal(res.data, pRes.data));
+              }).catch(function() {
+                cb(null, sbToLocal(res.data, {}));
+              });
+          }).catch(function(e) { cb(cloudErr(e)); });
       } else {
         cb(null, localLogInByContact('email', email, password));
       }
@@ -100,37 +142,64 @@ var Cloud = (function() {
   }
 
   // ===== 验证码 =====
-  function requestSmsCode(phone, cb) {
+  function requestSmsCode(contact, cb) {
     onReady(function() {
       if (isCloud()) {
-        AV.User.requestLoginSmsCode(phone).then(function() { cb(null, null); })
-          .catch(function(e) { cb(cloudErr(e)); });
+        var isPhone = /^1\d{10}$/.test(contact);
+        if (isPhone) {
+          _supabase.auth.signInWithOtp({ phone: contact })
+            .then(function(res) {
+              if (res.error) { cb(cloudErr(res.error)); return; }
+              cb(null, null);
+            }).catch(function(e) { cb(cloudErr(e)); });
+        } else {
+          _supabase.auth.signInWithOtp({ email: contact })
+            .then(function(res) {
+              if (res.error) { cb(cloudErr(res.error)); return; }
+              cb(null, null);
+            }).catch(function(e) { cb(cloudErr(e)); });
+        }
       } else {
         var code = String(Math.floor(100000 + Math.random() * 900000));
         var codes = localGetCodes();
-        codes[phone] = { code: code, ts: Date.now() };
+        codes[contact] = { code: code, ts: Date.now() };
         localStorage.setItem('tianji_codes', JSON.stringify(codes));
         cb(null, code);
       }
     });
   }
 
-  function signUpOrLogInWithCode(phone, code, cb) {
+  function signUpOrLogInWithCode(contact, code, cb) {
     onReady(function() {
       if (isCloud()) {
-        AV.User.signUpOrlogInWithMobilePhone(phone, code).then(function(u) { cb(null, avToLocal(u)); })
-          .catch(function(e) { cb(cloudErr(e)); });
+        var isPhone = /^1\d{10}$/.test(contact);
+        var params = isPhone ? { phone: contact, otp: code } : { email: contact, otp: code };
+        _supabase.auth.verifyOtp(params)
+          .then(function(res) {
+            if (res.error) { cb(cloudErr(res.error)); return; }
+            _supabase.from('user_profiles').select('*').eq('id', res.data.user.id).single()
+              .then(function(pRes) {
+                cb(null, sbToLocal(res.data, pRes.data));
+              }).catch(function() {
+                cb(null, sbToLocal(res.data, {}));
+              });
+          }).catch(function(e) { cb(cloudErr(e)); });
       } else {
         var codes = localGetCodes();
-        if (!codes[phone] || codes[phone].code !== code) { cb('验证码错误'); return; }
-        if (Date.now() - codes[phone].ts > 300000) { cb('验证码已过期'); return; }
+        if (!codes[contact] || codes[contact].code !== code) { cb('验证码错误'); return; }
+        if (Date.now() - codes[contact].ts > 300000) { cb('验证码已过期'); return; }
         var users = localGetUsers();
-        var found = localFindByContact('phone', phone, users);
-        if (found) { cb(null, found); }
-        else {
-          var uname = 'u' + phone.substr(-4);
-          users[uname] = { username: uname, nick: phone.substr(0,3) + '****' + phone.substr(7), password: '', phone: phone, joined: new Date().toISOString(), history: [] };
+        var found = localFindByContact('phone', contact, users) || localFindByContact('email', contact, users);
+        if (found) {
+          localStorage.setItem('tianji_session', JSON.stringify({ username: found.username, ts: Date.now() }));
+          cb(null, found);
+        } else {
+          var isPhone = /^1\d{10}$/.test(contact);
+          var uname = isPhone ? ('u' + contact.substr(-4)) : ('e' + contact.split('@')[0] + '_' + Math.floor(Math.random() * 1000));
+          var nick = isPhone ? (contact.substr(0,3) + '****' + contact.substr(7)) : contact.split('@')[0];
+          users[uname] = { username: uname, nick: nick, password: '', phone: isPhone ? contact : '', email: isPhone ? '' : contact, joined: new Date().toISOString(), history: [] };
           localStorage.setItem('tianji_users', JSON.stringify(users));
+          localStorage.setItem('tianji_session', JSON.stringify({ username: uname, ts: Date.now() }));
           cb(null, users[uname]);
         }
       }
@@ -141,22 +210,27 @@ var Cloud = (function() {
   function socialLogin(platform, cb) {
     onReady(function() {
       if (isCloud()) {
-        // LeanCloud 会自动处理 OAuth 跳转
-        // 需要在 LeanCloud 控制台配置社交账号
-        var providers = {
-          wechat: 'weixin',
+        var providerMap = {
+          wechat: 'wechat',
           qq: 'qq',
           apple: 'apple'
         };
-        var provider = providers[platform];
+        var provider = providerMap[platform];
         if (!provider) { cb('不支持的平台'); return; }
 
-        // 尝试使用 LeanCloud 内置的 OAuth
-        AV.User.logInWithAuthData({}, provider).then(function(u) {
-          cb(null, avToLocal(u));
+        // Supabase OAuth
+        _supabase.auth.signInWithOAuth({
+          provider: provider,
+          options: { redirectTo: window.location.origin + window.location.pathname }
+        }).then(function(res) {
+          if (res.error) {
+            console.warn('[Cloud] OAuth 未配置，使用演示模式:', platform);
+            localSocialLogin(platform, cb);
+            return;
+          }
+          // Redirect will happen automatically
         }).catch(function(e) {
-          // 如果 LeanCloud 未配置该平台，回退到演示模式
-          console.warn('[Cloud] 社交登录未配置，使用演示模式:', platform);
+          console.warn('[Cloud] OAuth 失败，使用演示模式:', platform);
           localSocialLogin(platform, cb);
         });
       } else {
@@ -169,17 +243,34 @@ var Cloud = (function() {
   function guestLogin(cb) {
     onReady(function() {
       if (isCloud()) {
-        var user = new AV.User();
-        user.set('isGuest', true);
-        user.signUp().then(function(u) {
-          u.set('nick', '游客');
-          u.save().then(function() { cb(null, avToLocal(u)); });
+        var fakeEmail = 'guest_' + Math.random().toString(36).substr(2, 8) + '@tianji.guest';
+        var fakePass = 'guest_' + Date.now();
+        _supabase.auth.signUp({
+          email: fakeEmail,
+          password: fakePass,
+          data: { isGuest: true, nick: '游客' }
+        }).then(function(res) {
+          if (res.error) { cb(cloudErr(res.error)); return; }
+          if (res.data && res.data.user) {
+            _supabase.from('user_profiles').upsert({
+              id: res.data.user.id,
+              nick: '游客',
+              is_guest: true
+            }).then(function() {
+              cb(null, sbToLocal(res.data, { nick: '游客', is_guest: true }));
+            }).catch(function() {
+              cb(null, sbToLocal(res.data, { nick: '游客', is_guest: true }));
+            });
+          } else {
+            cb(null, sbToLocal(res.data, { nick: '游客', is_guest: true }));
+          }
         }).catch(function(e) { cb(cloudErr(e)); });
       } else {
         var guestId = 'guest_' + Math.random().toString(36).substr(2, 8);
         var users = localGetUsers();
         users[guestId] = { username: guestId, nick: '游客', password: '', isGuest: true, joined: new Date().toISOString(), history: [] };
         localStorage.setItem('tianji_users', JSON.stringify(users));
+        localStorage.setItem('tianji_session', JSON.stringify({ username: guestId, ts: Date.now() }));
         cb(null, users[guestId]);
       }
     });
@@ -188,24 +279,38 @@ var Cloud = (function() {
   // ===== 退出 =====
   function logOut(cb) {
     onReady(function() {
-      if (isCloud()) { try { AV.User.logOut(); } catch(e) {} }
-      localStorage.removeItem('tianji_session');
-      if (cb) cb(null);
+      if (isCloud() && _supabase) {
+        _supabase.auth.signOut().then(function() {
+          localStorage.removeItem('tianji_session');
+          if (cb) cb(null);
+        }).catch(function() {
+          localStorage.removeItem('tianji_session');
+          if (cb) cb(null);
+        });
+      } else {
+        localStorage.removeItem('tianji_session');
+        if (cb) cb(null);
+      }
     });
   }
 
   // ===== 获取当前用户 =====
   function getCurrentUser(cb) {
     onReady(function() {
-      if (isCloud()) {
-        var current = AV.User.current();
-        if (current) {
-          // 尝试刷新
-          current.fetch().then(function(u) { cb(null, avToLocal(u)); })
-            .catch(function() { cb(null, avToLocal(current)); });
-        } else {
-          cb(null, null);
-        }
+      if (isCloud() && _supabase) {
+        _supabase.auth.getSession().then(function(res) {
+          if (res.data && res.data.session) {
+            var authData = res.data;
+            _supabase.from('user_profiles').select('*').eq('id', authData.session.user.id).single()
+              .then(function(pRes) {
+                cb(null, sbToLocal(authData, pRes.data));
+              }).catch(function() {
+                cb(null, sbToLocal(authData, {}));
+              });
+          } else {
+            cb(null, null);
+          }
+        }).catch(function() { cb(null, null); });
       } else {
         var s = localGetSession();
         if (s && s.username) {
@@ -221,15 +326,16 @@ var Cloud = (function() {
   // ===== 数据同步 =====
   function saveHistory(type, detail, cb) {
     onReady(function() {
-      if (isCloud()) {
-        var cls = LC_CONFIG.historyClass || 'UserHistory';
-        var obj = AV.Object.extend(cls);
-        var item = new obj();
-        item.set('type', type);
-        item.set('detail', detail);
-        item.set('user', AV.User.current());
-        item.save().then(function() { if (cb) cb(null); })
-          .catch(function(e) { if (cb) cb(cloudErr(e)); });
+      if (isCloud() && _supabase) {
+        _supabase.auth.getSession().then(function(res) {
+          if (!res.data || !res.data.session) { if (cb) cb(null); return; }
+          _supabase.from('user_history').insert({
+            user_id: res.data.session.user.id,
+            type: type,
+            detail: detail
+          }).then(function() { if (cb) cb(null); })
+            .catch(function(e) { console.warn('[Cloud] 保存记录失败:', e); if (cb) cb(null); });
+        });
       } else {
         localSaveHistory(type, detail);
         if (cb) cb(null);
@@ -239,18 +345,21 @@ var Cloud = (function() {
 
   function loadHistory(cb) {
     onReady(function() {
-      if (isCloud()) {
-        var cls = LC_CONFIG.historyClass || 'UserHistory';
-        var query = new AV.Query(cls);
-        query.equalTo('user', AV.User.current());
-        query.descending('createdAt');
-        query.limit(100);
-        query.find().then(function(results) {
-          var items = results.map(function(r) {
-            return { type: r.get('type'), detail: r.get('detail'), time: r.createdAt.toISOString() };
-          });
-          cb(null, items);
-        }).catch(function(e) { cb(cloudErr(e)); });
+      if (isCloud() && _supabase) {
+        _supabase.auth.getSession().then(function(res) {
+          if (!res.data || !res.data.session) { cb(null, []); return; }
+          _supabase.from('user_history').select('*')
+            .eq('user_id', res.data.session.user.id)
+            .order('created_at', { ascending: false })
+            .limit(100)
+            .then(function(res) {
+              if (res.error) { cb(cloudErr(res.error)); return; }
+              var items = (res.data || []).map(function(r) {
+                return { type: r.type, detail: r.detail, time: r.created_at };
+              });
+              cb(null, items);
+            }).catch(function(e) { cb(cloudErr(e)); });
+        });
       } else {
         cb(null, localLoadHistory());
       }
@@ -259,16 +368,14 @@ var Cloud = (function() {
 
   function clearHistory(cb) {
     onReady(function() {
-      if (isCloud()) {
-        var cls = LC_CONFIG.historyClass || 'UserHistory';
-        var query = new AV.Query(cls);
-        query.equalTo('user', AV.User.current());
-        query.limit(1000);
-        query.find().then(function(results) {
-          if (results.length === 0) { if (cb) cb(null); return; }
-          AV.Object.destroyAll(results).then(function() { if (cb) cb(null); })
+      if (isCloud() && _supabase) {
+        _supabase.auth.getSession().then(function(res) {
+          if (!res.data || !res.data.session) { if (cb) cb(null); return; }
+          _supabase.from('user_history').delete()
+            .eq('user_id', res.data.session.user.id)
+            .then(function() { if (cb) cb(null); })
             .catch(function(e) { if (cb) cb(cloudErr(e)); });
-        }).catch(function(e) { if (cb) cb(cloudErr(e)); });
+        });
       } else {
         localClearHistory();
         if (cb) cb(null);
@@ -278,19 +385,24 @@ var Cloud = (function() {
 
   // ===== 错误处理 =====
   function cloudErr(e) {
-    var msg = (e && e.message) || '操作失败';
-    // 翻译常见错误
+    var msg = '';
+    if (typeof e === 'string') return e;
+    if (e && e.message) msg = e.message;
+    else if (e && e.msg) msg = e.msg;
+    else if (e && e.error_description) msg = e.error_description;
+    else msg = '操作失败';
     var map = {
-      'Username is already taken.': '用户名已存在',
-      'Mobile phone number is already taken.': '该手机号已注册',
-      'Email is already taken.': '该邮箱已注册',
-      'Username or password is incorrect.': '用户名或密码错误',
-      'The mobile phone number is not valid.': '手机号格式不正确',
-      'Cannot find user.': '用户不存在',
-      'Password is required.': '请输入密码',
-      'The SMS code is not correct.': '验证码错误',
-      'The SMS code has expired.': '验证码已过期',
-      'Sms code send limit exceeded.': '验证码发送过于频繁，请稍后再试'
+      'User already registered': '该账号已注册',
+      'Invalid login credentials': '用户名或密码错误',
+      'Email not confirmed': '请先验证邮箱',
+      'Phone not confirmed': '请先验证手机号',
+      'Rate limit exceeded': '操作过于频繁，请稍后再试',
+      'Invalid email': '邮箱格式不正确',
+      'Password should be at least 6 characters': '密码至少6位',
+      'Token has expired or is invalid': '验证码已过期',
+      'Invalid OTP': '验证码错误',
+      'User not found': '用户不存在',
+      'Network request failed': '网络连接失败，请检查网络'
     };
     return map[msg] || msg;
   }
@@ -299,6 +411,7 @@ var Cloud = (function() {
   function localGetUsers() { try { return JSON.parse(localStorage.getItem('tianji_users')) || {}; } catch(e) { return {}; } }
   function localGetSession() { try { return JSON.parse(localStorage.getItem('tianji_session')); } catch(e) { return null; } }
   function localGetCodes() { try { return JSON.parse(localStorage.getItem('tianji_codes')) || {}; } catch(e) { return {}; } }
+  function localGetEmailMapping() { try { return JSON.parse(localStorage.getItem('tianji_email_map')) || {}; } catch(e) { return {}; } }
   function localHashPwd(p) { var h=0; for(var i=0;i<p.length;i++){h=((h<<5)-h+p.charCodeAt(i))|0;h=((h<<13)^h)|0;} return 'h'+Math.abs(h).toString(36)+p.length; }
 
   function localFindByContact(type, contact, users) {
@@ -320,6 +433,7 @@ var Cloud = (function() {
       joined: new Date().toISOString(), history: []
     };
     localStorage.setItem('tianji_users', JSON.stringify(users));
+    localStorage.setItem('tianji_session', JSON.stringify({ username: username, ts: Date.now() }));
     return users[username];
   }
 

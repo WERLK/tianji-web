@@ -6,7 +6,7 @@ var ASSETS = [
   '/tianji-web/js/utils.js',
   '/tianji-web/js/app.js',
   '/tianji-web/js/knowledge.js',
-  '/tianji-web/js/leancloud-config.js',
+  '/tianji-web/js/supabase-config.js',
   '/tianji-web/js/cloud.js',
   '/tianji-web/manifest.json',
   '/tianji-web/icons/icon-192.png',
