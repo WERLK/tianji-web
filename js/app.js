@@ -464,8 +464,12 @@ function showForgotPassword(){
   document.getElementById('registerPanel').style.display='none';
   document.getElementById('forgotPanel').style.display='';
   document.getElementById('loginError').textContent='';
-  document.getElementById('forgotError').textContent='';
   document.getElementById('authTitle').textContent='忘记密码';
+  // 恢复原始表单（发送成功后innerHTML会被替换）
+  var fp=document.getElementById('forgotPanel');
+  if(!document.getElementById('forgotEmail')){
+    fp.innerHTML='<p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;line-height:1.6">输入注册时使用的<strong>真实邮箱</strong>，我们将发送密码重置链接。<br><span style="font-size:11px;opacity:0.7">（仅支持邮箱注册的账号，用户名注册不支持）</span></p><input class="auth-input" id="forgotEmail" placeholder="注册邮箱" autocomplete="email" type="email"><div class="auth-error" id="forgotError"></div><button class="btn-primary" style="width:100%" onclick="doResetPassword()">发送重置链接</button><div class="auth-switch"><a href="javascript:void(0)" onclick="showLogin()">← 返回登录</a></div>';
+  }
   _updateResetCooldown();
 }
 var _resetCooldownTimer = null;
