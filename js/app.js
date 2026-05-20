@@ -270,13 +270,29 @@ function doZodiac() {
     { icon: '💰', label: '财运', val: f.wealth, color: '#fdcb6e' },
     { icon: '🏃', label: '健康', val: f.health, color: '#00b894' }
   ];
+  var today = new Date();
+  var dateStr = today.getFullYear() + '年' + (today.getMonth()+1) + '月' + today.getDate() + '日';
   document.getElementById('zodiac-result').innerHTML =
-    '<div class="result-area"><div class="card"><h3 style="color:var(--gold);margin-bottom:16px;font-family:serif;font-size:16px">'+s.name+'今日运势</h3>' +
-      '<div style="text-align:center;margin-bottom:20px"><span style="font-size:56px;font-weight:900;color:var(--gold);font-family:serif">'+f.overall+'</span><span style="font-size:14px;color:var(--text-muted)">/100</span></div>' +
-      '<div class="bar-group">' + bars.map(function(b){return '<div class="bar-item"><span class="bar-icon">'+b.icon+'</span><span class="bar-label">'+b.label+'</span><div class="bar-track"><div class="bar-fill" style="width:'+b.val+'%;background:'+b.color+'"></div></div><span class="bar-value">'+b.val+'</span></div>';}).join('') + '</div>' +
+    '<div class="result-area"><div class="card"><h3 style="color:var(--gold);margin-bottom:4px;font-family:serif;font-size:16px">' + s.sym + ' ' + s.name + '今日运势</h3>' +
+      '<div style="font-size:11px;color:var(--text-muted);margin-bottom:16px">' + dateStr + ' · 守护元素：' + s.el + '</div>' +
+      '<div style="text-align:center;margin-bottom:20px"><span style="font-size:56px;font-weight:900;color:var(--gold);font-family:serif">' + f.overall + '</span><span style="font-size:14px;color:var(--text-muted)">/100</span></div>' +
+      '<div class="bar-group">' + bars.map(function(b){return '<div class="bar-item"><span class="bar-icon">' + b.icon + '</span><span class="bar-label">' + b.label + '</span><div class="bar-track"><div class="bar-fill" style="width:' + b.val + '%;background:' + b.color + '"></div></div><span class="bar-value">' + b.val + '</span></div>';}).join('') + '</div>' +
       '<div class="divider"></div>' +
-      '<div class="reading-block"><div class="reading-title">📊 运势概述</div><div class="reading-text">'+f.summary+'</div></div>' +
-      '<div class="reading-block"><div class="reading-title">💡 今日建议</div><div class="reading-text">'+f.advice+'</div></div>' +
+      '<div class="reading-block"><div class="reading-title">📊 运势概述</div><div class="reading-text">' + f.summary + '</div></div>' +
+      '<div class="reading-block"><div class="reading-title">💕 爱情运势</div><div class="reading-text">' + f.loveDetail + '</div></div>' +
+      '<div class="reading-block"><div class="reading-title">💼 事业运势</div><div class="reading-text">' + f.careerDetail + '</div></div>' +
+      '<div class="reading-block"><div class="reading-title">💰 财运分析</div><div class="reading-text">' + f.wealthDetail + '</div></div>' +
+      '<div class="reading-block"><div class="reading-title">🏃 健康提醒</div><div class="reading-text">' + f.healthDetail + '</div></div>' +
+      '<div class="divider"></div>' +
+      '<div class="reading-block"><div class="reading-title">💡 今日建议</div><div class="reading-text">' + f.advice + '</div></div>' +
+    '</div>' +
+    '<div class="card" style="margin-top:14px"><h3 style="color:var(--gold);margin-bottom:12px;font-family:serif;font-size:16px">🍀 今日开运</h3>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
+        '<div style="padding:10px;background:var(--bg-secondary);border-radius:var(--radius-sm);text-align:center"><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">幸运颜色</div><div style="font-size:14px;font-weight:600;color:var(--gold)">' + f.luckyColor + '</div></div>' +
+        '<div style="padding:10px;background:var(--bg-secondary);border-radius:var(--radius-sm);text-align:center"><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">幸运方位</div><div style="font-size:14px;font-weight:600;color:var(--gold)">' + f.luckyDir + '</div></div>' +
+        '<div style="padding:10px;background:var(--bg-secondary);border-radius:var(--radius-sm);text-align:center"><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">幸运数字</div><div style="font-size:14px;font-weight:600;color:var(--gold)">' + f.luckyNum + '</div></div>' +
+        '<div style="padding:10px;background:var(--bg-secondary);border-radius:var(--radius-sm);text-align:center"><div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">开运食物</div><div style="font-size:14px;font-weight:600;color:var(--gold)">' + f.luckyFood + '</div></div>' +
+      '</div>' +
     '</div></div>';
 }
 
