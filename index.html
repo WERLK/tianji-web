@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
-  <link rel="stylesheet" href="css/style.css?v=9">
+  <link rel="stylesheet" href="css/style.css?v=13">
 </head>
 <body>
 
@@ -529,16 +529,16 @@
   </div>
 </nav>
 
-<script src="js/supabase-config.js?v=9"></script>
-<script src="js/cloud.js?v=9"></script>
-<script src="js/utils.js?v=9"></script>
-<script src="js/knowledge.js?v=9"></script>
-<script src="js/divination.js?v=9"></script>
-<script src="js/app.js?v=9"></script>
+<script src="js/supabase-config.js?v=13"></script>
+<script src="js/cloud.js?v=13"></script>
+<script src="js/utils.js?v=13"></script>
+<script src="js/knowledge.js?v=13"></script>
+<script src="js/divination.js?v=13"></script>
+<script src="js/app.js?v=13"></script>
 <script>
 Cloud.init();
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js?v=9').then(function(reg) {
+  navigator.serviceWorker.register('sw.js?v=13').then(function(reg) {
     if (reg.waiting) { reg.waiting.postMessage('skipWaiting'); }
     reg.addEventListener('updatefound', function() {
       var newWorker = reg.installing;
