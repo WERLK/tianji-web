@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
   renderTarotSpreads();
   renderZodiacGrid();
   renderZodiacInfo();
+  renderKnowledgeList();
   initBottomBar();
   initFabTop();
 });
@@ -457,4 +458,57 @@ function clearHistory(){
   if(!state.currentUser)return;
   var users=getUsers();users[state.currentUser.username].history=[];
   saveUsers(users);state.currentUser.history=[];renderProfile();showToast('记录已清空');
+}
+
+// ===== Knowledge =====
+var knowledgeDescs = {
+  basics: '阴阳五行 · 天干地支 · 八卦河洛',
+  bazi: '排盘方法 · 十神体系 · 旺衰格局 · 大运流年',
+  ziwei: '十二宫位 · 主星辅星 · 四化飞星 · 格局',
+  liuyao: '起卦成卦 · 装卦六亲 · 取用神 · 断卦精要',
+  xiangxue: '面相三停五官 · 手相三大主线',
+  sanshi: '奇门遁甲 · 大六壬 · 太乙神数',
+  books: '入门基础 · 八字 · 六爻 · 紫微斗数 · 面相'
+};
+
+function renderKnowledgeList() {
+  var el = document.getElementById('knowledge-list');
+  if (!el || typeof KNOWLEDGE === 'undefined') return;
+  var keys = Object.keys(KNOWLEDGE);
+  el.innerHTML = keys.map(function(key) {
+    var k = KNOWLEDGE[key];
+    return '<div class="knowledge-category" onclick="showKnowledge(\'' + key + '\')">' +
+      '<div class="knowledge-cat-header">' +
+        '<div class="knowledge-cat-icon">' + k.icon + '</div>' +
+        '<div class="knowledge-cat-title">' + k.title + '</div>' +
+      '</div>' +
+      '<div class="knowledge-cat-desc">' + (knowledgeDescs[key] || '') + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function showKnowledge(key) {
+  if (typeof KNOWLEDGE === 'undefined') return;
+  var k = KNOWLEDGE[key];
+  if (!k) return;
+  document.getElementById('knowledge-detail-title').textContent = k.icon + ' ' + k.title;
+  var content = k.sections.map(function(sec) {
+    return '<div class="knowledge-section">' +
+      '<div class="knowledge-section-title">' + sec.title + '</div>' +
+      sec.items.map(function(item) {
+        return '<div class="knowledge-item">' + item + '</div>';
+      }).join('') +
+    '</div>';
+  }).join('');
+  if (key === 'books') {
+    content += '<div class="card" style="margin-top:20px;padding:16px">' +
+      '<div style="font-size:13px;color:var(--text-muted);line-height:1.8">' +
+        '上述皆为古代先贤用以观察世界、解释人生的一套符号推演模型，深刻融合了古典哲学与宇宙观，是中国传统文化独特的一部分。<br><br>' +
+        '但请务必理解：命盘、卦象展现的是先天趋势与可能性，而非绝对的宿命。所谓"一命二运三风水，四积阴德五读书"，后天的选择、努力、修为，其权重远大于纸面的预判。学习这一切最大的价值，在于获得一套审视自我、洞明关系的智慧，以及"知天命而用之"的积极心态，而非陷入命中注定的消极等待。' +
+      '</div>' +
+    '</div>';
+  }
+  document.getElementById('knowledge-detail-content').innerHTML = content;
+  document.getElementById('knowledge-back-btn').setAttribute('onclick', "goPage('" + (state.currentPage === 'knowledge' ? 'knowledge' : state.currentPage) + "')");
+  goPage('knowledge-detail');
 }

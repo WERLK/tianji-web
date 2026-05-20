@@ -75,6 +75,11 @@
             <div class="module-name">数字能量</div>
             <div class="module-desc">生命灵数 · 号码分析</div>
           </div>
+          <div class="module-card" onclick="goPage('knowledge')">
+            <div class="module-icon" style="background:rgba(162,155,254,0.12)">📖</div>
+            <div class="module-name">命理百科</div>
+            <div class="module-desc">阴阳五行 · 八字紫微 · 六爻相学</div>
+          </div>
         </div>
       </div>
     </div>
@@ -123,6 +128,7 @@
         </div>
       </div>
       <div class="section" id="bazi-result"></div>
+      <div class="section"><div class="knowledge-tip" onclick="showKnowledge('bazi')">📖 了解八字命理知识 → 十神体系 · 旺衰格局 · 大运流年</div></div>
     </div>
   </div>
 
@@ -137,6 +143,7 @@
         </div>
       </div>
       <div class="section" id="zhouyi-result"></div>
+      <div class="section"><div class="knowledge-tip" onclick="showKnowledge('liuyao')">📖 了解六爻预测知识 → 起卦装卦 · 六亲用神 · 断卦精要</div></div>
     </div>
   </div>
 
@@ -152,6 +159,7 @@
         </div>
       </div>
       <div class="section" id="tarot-result"></div>
+      <div class="section"><div class="knowledge-tip" onclick="showKnowledge('basics')">📖 了解命理基础 → 阴阳五行 · 天干地支 · 八卦河洛</div></div>
     </div>
   </div>
 
@@ -167,6 +175,7 @@
         </div>
       </div>
       <div class="section" id="zodiac-result"></div>
+      <div class="section"><div class="knowledge-tip" onclick="showKnowledge('ziwei')">📖 了解紫微斗数 → 十二宫位 · 主星辅星 · 四化飞星</div></div>
     </div>
   </div>
 
@@ -181,6 +190,7 @@
         </div>
       </div>
       <div class="section" id="name-result"></div>
+      <div class="section"><div class="knowledge-tip" onclick="showKnowledge('xiangxue')">📖 了解相学知识 → 面相手相 · 三停五官 · 十二宫</div></div>
     </div>
   </div>
 
@@ -204,6 +214,7 @@
         </div>
       </div>
       <div class="section" id="fs-result"></div>
+      <div class="section"><div class="knowledge-tip" onclick="showKnowledge('sanshi')">📖 了解三式绝学 → 奇门遁甲 · 大六壬 · 太乙神数</div></div>
     </div>
   </div>
 
@@ -222,6 +233,22 @@
         </div>
       </div>
       <div class="section" id="num-result"></div>
+    </div>
+  </div>
+
+  <!-- Page: Knowledge (命理百科) -->
+  <div class="page" id="page-knowledge">
+    <div class="page-scroll">
+      <div class="page-header"><span class="page-back" onclick="goPage('home')">←</span><h2>📖 命理百科</h2></div>
+      <div class="section" id="knowledge-list"></div>
+    </div>
+  </div>
+
+  <!-- Page: Knowledge Detail -->
+  <div class="page" id="page-knowledge-detail">
+    <div class="page-scroll">
+      <div class="page-header"><span class="page-back" id="knowledge-back-btn">←</span><h2 id="knowledge-detail-title"></h2></div>
+      <div class="section" id="knowledge-detail-content"></div>
     </div>
   </div>
 
@@ -293,7 +320,8 @@
   </div>
 </nav>
 
-<script src="js/utils.js?v=8"></script>
-<script src="js/app.js?v=8"></script>
+<script src="js/knowledge.js?v=9"></script>
+<script src="js/utils.js?v=9"></script>
+<script src="js/app.js?v=9"></script>
 </body>
 </html>
