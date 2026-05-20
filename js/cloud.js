@@ -405,20 +405,113 @@ var Cloud = (function() {
     });
   }
 
-  // ===== 忘记密码（Supabase 内置 + hash 回调） =====
+  // ===== 忘记密码（Resend 直发 + Supabase 兜底） =====
   function resetPassword(email, cb) {
     onReady(function() {
       if (!isCloud()) { cb('本地模式不支持密码重置'); return; }
-      _authPost('/recover', { email: email })
-        .then(function(res) {
-          if (_isAuthError(res)) { cb(cloudErr(res)); return; }
-          cb(null);
+      // 1. 生成一次性 token
+      var token = 'rst_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 12);
+      var expires = Date.now() + 30 * 60 * 1000;
+      // 2. 查找用户 profile
+      _restGet('user_profiles', '?select=id,nick,email&email=eq.' + encodeURIComponent(email))
+        .then(function(profiles) {
+          if (!profiles || profiles.length === 0) {
+            // 尝试按 nick（用户名）查找
+            var uname = email.split('@')[0];
+            return _restGet('user_profiles', '?select=id,nick,email&nick=eq.' + encodeURIComponent(uname));
+          }
+          return Promise.resolve(profiles);
+        })
+        .then(function(profiles) {
+          if (!profiles || profiles.length === 0) { cb('该邮箱未注册'); return; }
+          var p = profiles[0];
+          // 3. 存储 token
+          return _restPost('user_profiles', { id: p.id, reset_token: token, reset_expires: expires, email: email }, true)
+            .then(function() { return p; });
+        })
+        .then(function(p) {
+          // 4. 用 Resend 发邮件
+          var resetUrl = window.location.origin + window.location.pathname + '#reset=' + token;
+          var resendKey = (typeof RESEND_KEY !== 'undefined') ? RESEND_KEY : '';
+          if (resendKey) {
+            return fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: { 'Authorization': 'Bearer ' + resendKey, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                from: 'onboarding@resend.dev',
+                to: email,
+                subject: '天机阁 - 密码重置',
+                html: '<div style="max-width:480px;margin:0 auto;padding:32px 20px;font-family:-apple-system,sans-serif;background:#0a0a1a;color:#e8d5a8;border-radius:12px;border:1px solid rgba(201,169,110,0.3)">' +
+                  '<div style="text-align:center;margin-bottom:24px"><span style="font-size:36px">🔮</span></div>' +
+                  '<h2 style="text-align:center;color:#c9a96e;margin:0 0 8px">密码重置</h2>' +
+                  '<p style="color:#aaa;text-align:center;margin:0 0 24px">你正在重置天机阁账号的密码，点击下方按钮设置新密码：</p>' +
+                  '<div style="text-align:center"><a href="' + resetUrl + '" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#c9a96e,#a08050);color:#0a0a1a;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px">重置密码</a></div>' +
+                  '<p style="color:#666;font-size:12px;text-align:center;margin:24px 0 0">链接30分钟内有效。如非本人操作请忽略。</p>' +
+                  '<div style="text-align:center;margin-top:16px;color:#555;font-size:11px">— 天机阁</div></div>'
+              })
+            }).then(function(r) { return r.json(); })
+              .then(function(res) {
+                if (res && res.error) throw new Error('resend_fail');
+                cb(null);
+              })
+              .catch(function() {
+                // Resend 失败，回退到 Supabase 内置邮件
+                return _authPost('/recover', { email: email }).then(function(r) {
+                  if (_isAuthError(r)) { cb(cloudErr(r)); return; }
+                  cb(null);
+                });
+              });
+          } else {
+            // 没有 Resend key，直接用 Supabase
+            return _authPost('/recover', { email: email }).then(function(r) {
+              if (_isAuthError(r)) { cb(cloudErr(r)); return; }
+              cb(null);
+            });
+          }
         })
         .catch(function(e) { cb(cloudErr(e)); });
     });
   }
 
-  // ===== 通过 recovery token 设置新密码 =====
+  // ===== 验证自定义重置 token =====
+  function verifyResetToken(token, cb) {
+    onReady(function() {
+      if (!isCloud()) { cb('本地模式不支持'); return; }
+      _restGet('user_profiles', '?select=id,nick,reset_token,reset_expires&reset_token=eq.' + encodeURIComponent(token))
+        .then(function(profiles) {
+          if (!profiles || profiles.length === 0) { cb('链接无效或已过期'); return; }
+          var p = profiles[0];
+          if (!p.reset_expires || Date.now() > p.reset_expires) { cb('链接已过期，请重新申请'); return; }
+          cb(null, { userId: p.id, nick: p.nick });
+        })
+        .catch(function() { cb('验证失败'); });
+    });
+  }
+
+  // ===== 通过自定义 token 设置新密码 =====
+  function resetPasswordWithToken(token, newPassword, cb) {
+    onReady(function() {
+      if (!isCloud()) { cb('本地模式不支持'); return; }
+      verifyResetToken(token, function(err, data) {
+        if (err) { cb(err); return; }
+        // 用 Supabase admin API 更新密码
+        fetch(_url + '/auth/v1/admin/users/' + data.userId, {
+          method: 'PUT',
+          headers: { 'apikey': _key, 'Authorization': 'Bearer ' + _key, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: newPassword })
+        }).then(function(r) { return r.json(); })
+          .then(function(res) {
+            // 清除 token
+            _restPost('user_profiles', { id: data.userId, reset_token: null, reset_expires: null }, true).catch(function() {});
+            if (res && (res.error || res.error_code)) { cb('密码重置失败'); return; }
+            cb(null);
+          })
+          .catch(function() { cb('密码重置失败，请稍后重试'); });
+      });
+    });
+  }
+
+  // ===== 通过 Supabase recovery token 设置新密码 =====
   function updatePasswordWithToken(accessToken, newPassword, cb) {
     fetch(_url + '/auth/v1/user', {
       method: 'PUT',
@@ -810,6 +903,8 @@ var Cloud = (function() {
     clearHistory: clearHistory,
     handleOAuthCallback: handleOAuthCallback,
     resetPassword: resetPassword,
+    verifyResetToken: verifyResetToken,
+    resetPasswordWithToken: resetPasswordWithToken,
     updatePasswordWithToken: updatePasswordWithToken,
     startRealtime: startRealtime,
     stopRealtime: stopRealtime

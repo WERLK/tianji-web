@@ -3,7 +3,7 @@ var state = { baziGender: 1, fsGender: 1, selectedZodiac: 0, selectedSpread: 0, 
 
 // ===== Init =====
 document.addEventListener('DOMContentLoaded', function() {
-  // 检查 Supabase 密码重置回调 (#access_token=xxx&type=recovery)
+  // 检查密码重置回调
   var hash = window.location.hash;
   if (hash.indexOf('type=recovery') > -1) {
     var params = {};
@@ -16,6 +16,13 @@ document.addEventListener('DOMContentLoaded', function() {
       showResetPasswordPage(params.access_token);
       return;
     }
+  }
+  // 检查自定义重置 token (#reset=xxx)
+  var resetMatch = hash.match(/^#reset=(.+)$/);
+  if (resetMatch) {
+    window.location.hash = '';
+    showResetPasswordPage(null, resetMatch[1]);
+    return;
   }
   // 先检查是否有 OAuth 回调
   Cloud.handleOAuthCallback(function(err, user) {
@@ -465,7 +472,7 @@ function doResetPassword(){
     document.getElementById('forgotPanel').innerHTML='<div style="text-align:center;padding:20px 0"><div style="font-size:40px;margin-bottom:12px">📧</div><div style="font-size:15px;font-weight:600;margin-bottom:8px;color:var(--gold)">重置链接已发送</div><div style="font-size:13px;color:var(--text-muted);line-height:1.6">请检查你的邮箱（包括垃圾邮件），<br>点击链接即可重置密码。</div><div class="auth-switch" style="margin-top:16px"><a href="javascript:void(0)" onclick="showLogin()">← 返回登录</a></div></div>';
   });
 }
-function showResetPasswordPage(accessToken){
+function showResetPasswordPage(accessToken, customToken){
   var overlay=document.getElementById('authOverlay');
   overlay.classList.add('open');
   document.getElementById('loginPanel').style.display='none';
@@ -474,8 +481,8 @@ function showResetPasswordPage(accessToken){
   document.getElementById('authTitle').textContent='设置新密码';
   var panel=document.getElementById('forgotPanel');
   panel.innerHTML='<p style="font-size:13px;color:var(--text-muted);margin-bottom:14px">请输入你的新密码</p><input class="auth-input" id="newPassInput" type="password" placeholder="新密码（至少6位）" autocomplete="new-password"><input class="auth-input" id="newPassInput2" type="password" placeholder="确认新密码" autocomplete="new-password" style="margin-top:10px"><div class="auth-error" id="resetError"></div><button class="btn-primary" style="width:100%" onclick="doSetNewPassword()">确认重置</button><div class="auth-switch"><a href="javascript:void(0)" onclick="closeAuth()">取消</a></div>';
-  // 保存 token 供提交使用
   window._resetAccessToken=accessToken;
+  window._resetCustomToken=customToken;
 }
 function doSetNewPassword(){
   var errEl=document.getElementById('resetError');
@@ -486,11 +493,16 @@ function doSetNewPassword(){
   if(pass!==pass2){errEl.textContent='两次密码不一致';return;}
   var btn=document.querySelector('#forgotPanel .btn-primary');
   btn.textContent='重置中...';btn.disabled=true;
-  Cloud.updatePasswordWithToken(window._resetAccessToken,pass,function(err){
+  var done=function(err){
     btn.textContent='确认重置';btn.disabled=false;
     if(err){errEl.textContent=err;return;}
     document.getElementById('forgotPanel').innerHTML='<div style="text-align:center;padding:20px 0"><div style="font-size:40px;margin-bottom:12px">✅</div><div style="font-size:15px;font-weight:600;margin-bottom:8px;color:var(--gold)">密码重置成功</div><div style="font-size:13px;color:var(--text-muted);margin-bottom:16px">请使用新密码登录</div><div class="auth-switch"><a href="javascript:void(0)" onclick="showLogin()">← 去登录</a></div></div>';
-  });
+  };
+  if(window._resetCustomToken){
+    Cloud.resetPasswordWithToken(window._resetCustomToken,pass,done);
+  } else {
+    Cloud.updatePasswordWithToken(window._resetAccessToken,pass,done);
+  }
 }
 
 // ===== 账号记忆 =====
