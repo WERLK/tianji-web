@@ -354,25 +354,14 @@ function doNumberAnalysis() {
 }
 
 // ============================================
-// AUTH MODULE
 // ============================================
-var AUTH_KEY = 'tianji_users';
-var SESSION_KEY = 'tianji_session';
-var CODES_KEY = 'tianji_codes';
-function getUsers(){try{return JSON.parse(localStorage.getItem(AUTH_KEY))||{};}catch(e){return {};}}
-function saveUsers(u){localStorage.setItem(AUTH_KEY,JSON.stringify(u));}
-function getSession(){try{return JSON.parse(localStorage.getItem(SESSION_KEY));}catch(e){return null;}}
-function saveSession(u){localStorage.setItem(SESSION_KEY,JSON.stringify({username:u,ts:Date.now()}));}
-function clearSession(){localStorage.removeItem(SESSION_KEY);}
-function hashPwd(p){var h=0;for(var i=0;i<p.length;i++){h=((h<<5)-h+p.charCodeAt(i))|0;h=((h<<13)^h)|0;}return 'h'+Math.abs(h).toString(36)+p.length;}
-function getCodes(){try{return JSON.parse(localStorage.getItem(CODES_KEY))||{};}catch(e){return {};}}
-function saveCodes(c){localStorage.setItem(CODES_KEY,JSON.stringify(c));}
-function genCode(){return String(Math.floor(100000+Math.random()*900000));}
-
+// AUTH MODULE (uses Cloud module)
+// ============================================
 function restoreSession(){
-  var s=getSession();
-  if(s&&s.username){var users=getUsers();if(users[s.username]){state.currentUser=users[s.username];updateUI();return;}}
-  updateUI();
+  Cloud.getCurrentUser(function(err, user) {
+    if (user) { state.currentUser = user; }
+    updateUI();
+  });
 }
 function updateUI(){
   var avatar=document.getElementById('navAvatar');
@@ -416,7 +405,7 @@ function switchRegTab(tab) {
   }
 }
 
-// Send verification code (simulated)
+// Send verification code
 function sendCode(type) {
   var contact, btnId;
   if (type === 'phone') {
@@ -428,157 +417,71 @@ function sendCode(type) {
     btnId = 'emailCodeBtn';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact)) { document.getElementById('regError').textContent = '请输入正确的邮箱'; return; }
   }
-  var code = genCode();
-  var codes = getCodes();
-  codes[contact] = { code: code, ts: Date.now() };
-  saveCodes(codes);
-  showToast('验证码已发送：' + code + '（演示模式）');
   var btn = document.getElementById(btnId);
   btn.classList.add('disabled');
-  var sec = 60;
-  btn.textContent = sec + 's';
-  var timer = setInterval(function() {
-    sec--;
-    btn.textContent = sec + 's';
-    if (sec <= 0) { clearInterval(timer); btn.textContent = '获取验证码'; btn.classList.remove('disabled'); }
-  }, 1000);
-}
+  btn.textContent = '发送中...';
 
-// ============================================
-// Social Login Configuration
-// ============================================
-// To enable real WeChat/QQ login, fill in your API config below
-// and deploy a backend (LeanCloud / Cloudflare Workers / etc.)
-var SOCIAL_CONFIG = {
-  wechat: {
-    enabled: false,
-    appId: '',
-    redirectUri: '',
-    authUrl: 'https://open.weixin.qq.com/connect/qrconnect'
-  },
-  qq: {
-    enabled: false,
-    appId: '',
-    redirectUri: '',
-    authUrl: 'https://graph.qq.com/oauth2.0/authorize'
-  },
-  apple: {
-    enabled: false,
-    clientId: '',    // Your Service ID from Apple Developer
-    redirectUri: '',
-    authUrl: 'https://appleid.apple.com/auth/authorize'
-  }
-};
-
-function doSocialLogin(platform) {
-  var config = SOCIAL_CONFIG[platform];
-  var clientId = config.appId || config.clientId || '';
-  if (config && config.enabled && clientId) {
-    var oauthState = platform + '_' + Date.now();
-    var url = config.authUrl +
-      '?client_id=' + clientId +
-      '&redirect_uri=' + encodeURIComponent(config.redirectUri) +
-      '&response_type=code' +
-      '&state=' + oauthState;
-    if (platform === 'wechat') {
-      url += '&scope=snsapi_login#wechat_redirect';
-    } else if (platform === 'qq') {
-      url += '&scope=get_user_info';
-    } else if (platform === 'apple') {
-      url += '&scope=name email&response_mode=form_post';
+  Cloud.requestSmsCode(contact, function(err, demoCode) {
+    if (err) {
+      document.getElementById('regError').textContent = err;
+      btn.textContent = '获取验证码';
+      btn.classList.remove('disabled');
+      return;
     }
-    window.location.href = url;
-    return;
-  }
-  doSocialLoginDemo(platform);
-}
-
-function doSocialLoginDemo(platform) {
-  var labels = { wechat: '微信', qq: 'QQ', apple: 'Apple' };
-  var avatars = { wechat: '💚', qq: '💙', apple: '🍎' };
-  var label = labels[platform] || platform;
-  var avatar = avatars[platform] || '👤';
-  var btn = document.querySelector('.social-btn.' + platform);
-  if (btn) {
-    btn.textContent = '⏳ 正在连接' + label + '...';
-    btn.style.pointerEvents = 'none';
-  }
-  // Simulate network delay
-  setTimeout(function() {
-    if (btn) {
-      btn.textContent = platform === 'wechat' ? '📱 微信一键登录' : '🐧 QQ登录';
-      btn.style.pointerEvents = '';
-    }
-    var prefix = platform === 'wechat' ? 'wx_' : 'qq_';
-    var fakeId = prefix + Math.random().toString(36).substr(2, 8);
-    var users = getUsers();
-    var found = null;
-    var keys = Object.keys(users);
-    for (var i = 0; i < keys.length; i++) {
-      if (users[keys[i]].socialId === fakeId) { found = users[keys[i]]; break; }
-    }
-    if (found) {
-      state.currentUser = found;
-      saveSession(found.username);
-      updateUI(); closeAuth();
-      showToast('欢迎回来，' + (found.nick || found.username) + '！');
+    if (demoCode) {
+      showToast('验证码：' + demoCode + '（演示模式）');
     } else {
-      var nick = label + '用户' + Math.floor(Math.random() * 9000 + 1000);
-      var username = fakeId;
-      users[username] = {
-        username: username, nick: nick, avatar: avatar,
-        password: hashPwd(Math.random().toString(36)),
-        socialId: fakeId, socialType: platform,
-        joined: new Date().toISOString(), history: []
-      };
-      saveUsers(users);
-      state.currentUser = users[username];
-      saveSession(username);
-      updateUI(); closeAuth();
-      showToast(label + '登录成功，欢迎 ' + nick + '！');
+      showToast('验证码已发送');
     }
-  }, 1200);
+    var sec = 60;
+    btn.textContent = sec + 's';
+    var timer = setInterval(function() {
+      sec--;
+      btn.textContent = sec + 's';
+      if (sec <= 0) { clearInterval(timer); btn.textContent = '获取验证码'; btn.classList.remove('disabled'); }
+    }, 1000);
+  });
 }
 
-// Handle OAuth callback (for real API mode)
-// Call this on your callback page with URL params: ?code=xxx&state=xxx
-function handleOAuthCallback() {
-  var params = new URLSearchParams(window.location.search);
-  var code = params.get('code');
-  var state = params.get('state');
-  if (!code) return;
-  // Send code to your backend to exchange for access_token
-  // Then get user info and create/login account
-  // Example: fetch('/api/social-auth', { method: 'POST', body: JSON.stringify({ code, state }) })
+// Social login
+function doSocialLogin(platform) {
+  var labels = { wechat: '微信', qq: 'QQ', apple: 'Apple' };
+  var btns = document.querySelectorAll('.social-btn.' + platform);
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].textContent = '⏳ 连接中...';
+    btns[i].style.pointerEvents = 'none';
+  }
+
+  Cloud.socialLogin(platform, function(err, user) {
+    // Reset buttons
+    setTimeout(function() {
+      var allBtns = document.querySelectorAll('.social-btn.' + platform);
+      for (var i = 0; i < allBtns.length; i++) {
+        var icon = platform === 'wechat' ? '💬' : platform === 'qq' ? '🐧' : '🍎';
+        var label = labels[platform] || platform;
+        allBtns[i].innerHTML = '<span class="social-icon">' + icon + '</span> ' + label;
+        allBtns[i].style.pointerEvents = '';
+      }
+    }, 300);
+
+    if (err) { showToast(err); return; }
+    state.currentUser = user;
+    updateUI(); closeAuth();
+    showToast('欢迎，' + (user.nick || user.username) + '！');
+  });
 }
 
 // Guest login
 function doGuestLogin() {
-  var guestId = 'guest_' + Math.random().toString(36).substr(2, 8);
-  var users = getUsers();
-  users[guestId] = {
-    username: guestId, nick: '游客', password: '',
-    isGuest: true, joined: new Date().toISOString(), history: []
-  };
-  saveUsers(users);
-  state.currentUser = users[guestId];
-  saveSession(guestId);
-  updateUI(); closeAuth();
-  showToast('游客模式，数据仅保存在本设备');
+  Cloud.guestLogin(function(err, user) {
+    if (err) { showToast(err); return; }
+    state.currentUser = user;
+    updateUI(); closeAuth();
+    showToast('游客模式' + (Cloud.isCloud() ? '（数据已云端同步）' : '（数据仅保存在本设备）'));
+  });
 }
 
-// Find user by phone or email
-function findUserByContact(type, contact) {
-  var users = getUsers();
-  var keys = Object.keys(users);
-  for (var i = 0; i < keys.length; i++) {
-    var u = users[keys[i]];
-    if (type === 'phone' && u.phone === contact) return u;
-    if (type === 'email' && u.email === contact) return u;
-  }
-  return null;
-}
-
+// Register
 function doRegister() {
   var errEl = document.getElementById('regError');
   errEl.textContent = '';
@@ -592,12 +495,11 @@ function doRegister() {
     if (!/^[a-zA-Z0-9\u4e00-\u9fa5_]+$/.test(username)) { errEl.textContent = '用户名仅支持中英文、数字和下划线'; return; }
     if (pass.length < 6) { errEl.textContent = '密码至少6位'; return; }
     if (pass !== pass2) { errEl.textContent = '两次密码不一致'; return; }
-    var users = getUsers();
-    if (users[username]) { errEl.textContent = '用户名已存在'; return; }
-    users[username] = { username: username, nick: nick || username, password: hashPwd(pass), joined: new Date().toISOString(), history: [] };
-    saveUsers(users);
-    state.currentUser = users[username]; saveSession(username); updateUI(); closeAuth();
-    showToast('注册成功，欢迎 ' + (nick || username) + '！');
+    Cloud.signUp(username, pass, { nick: nick }, function(err, user) {
+      if (err) { errEl.textContent = err; return; }
+      state.currentUser = user; updateUI(); closeAuth();
+      showToast('注册成功，欢迎 ' + (user.nick || user.username) + '！');
+    });
 
   } else if (_regTab === 'phone') {
     var phone = document.getElementById('regPhone').value.trim();
@@ -605,17 +507,12 @@ function doRegister() {
     var pass = document.getElementById('regPhonePass').value;
     if (!/^1\d{10}$/.test(phone)) { errEl.textContent = '请输入正确的手机号'; return; }
     if (code.length !== 6) { errEl.textContent = '请输入6位验证码'; return; }
-    var codes = getCodes();
-    if (!codes[phone] || codes[phone].code !== code) { errEl.textContent = '验证码错误'; return; }
-    if (Date.now() - codes[phone].ts > 300000) { errEl.textContent = '验证码已过期'; return; }
     if (pass.length < 6) { errEl.textContent = '密码至少6位'; return; }
-    if (findUserByContact('phone', phone)) { errEl.textContent = '该手机号已注册'; return; }
-    var users = getUsers();
-    var uname = 'u' + phone.substr(-4);
-    users[uname] = { username: uname, nick: phone.substr(0,3) + '****' + phone.substr(7), password: hashPwd(pass), phone: phone, joined: new Date().toISOString(), history: [] };
-    saveUsers(users);
-    state.currentUser = users[uname]; saveSession(uname); updateUI(); closeAuth();
-    showToast('注册成功！');
+    Cloud.signUpOrLogInWithCode(phone, code, function(err, user) {
+      if (err) { errEl.textContent = err; return; }
+      state.currentUser = user; updateUI(); closeAuth();
+      showToast('注册成功！');
+    });
 
   } else if (_regTab === 'email') {
     var email = document.getElementById('regEmail').value.trim();
@@ -623,20 +520,16 @@ function doRegister() {
     var pass = document.getElementById('regEmailPass').value;
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errEl.textContent = '请输入正确的邮箱'; return; }
     if (code.length !== 6) { errEl.textContent = '请输入6位验证码'; return; }
-    var codes = getCodes();
-    if (!codes[email] || codes[email].code !== code) { errEl.textContent = '验证码错误'; return; }
-    if (Date.now() - codes[email].ts > 300000) { errEl.textContent = '验证码已过期'; return; }
     if (pass.length < 6) { errEl.textContent = '密码至少6位'; return; }
-    if (findUserByContact('email', email)) { errEl.textContent = '该邮箱已注册'; return; }
-    var users = getUsers();
-    var uname = 'e' + email.split('@')[0] + '_' + Math.floor(Math.random()*1000);
-    users[uname] = { username: uname, nick: email.split('@')[0], password: hashPwd(pass), email: email, joined: new Date().toISOString(), history: [] };
-    saveUsers(users);
-    state.currentUser = users[uname]; saveSession(uname); updateUI(); closeAuth();
-    showToast('注册成功！');
+    Cloud.signUpOrLogInWithCode(email, code, function(err, user) {
+      if (err) { errEl.textContent = err; return; }
+      state.currentUser = user; updateUI(); closeAuth();
+      showToast('注册成功！');
+    });
   }
 }
 
+// Login
 function doLogin() {
   var errEl = document.getElementById('loginError');
   errEl.textContent = '';
@@ -646,36 +539,42 @@ function doLogin() {
     var pass = document.getElementById('loginPass').value;
     if (!username) { errEl.textContent = '请输入用户名'; return; }
     if (!pass) { errEl.textContent = '请输入密码'; return; }
-    var users = getUsers(); var user = users[username];
-    if (!user) { errEl.textContent = '用户不存在'; return; }
-    if (user.password !== hashPwd(pass)) { errEl.textContent = '密码错误'; return; }
-    state.currentUser = user; saveSession(username); updateUI(); closeAuth();
-    showToast('欢迎回来，' + (user.nick || user.username) + '！');
+    Cloud.logIn(username, pass, function(err, user) {
+      if (err) { errEl.textContent = err; return; }
+      state.currentUser = user; updateUI(); closeAuth();
+      showToast('欢迎回来，' + (user.nick || user.username) + '！');
+    });
 
   } else if (_loginTab === 'phone') {
     var phone = document.getElementById('loginPhone').value.trim();
     var pass = document.getElementById('loginPhonePass').value;
     if (!phone) { errEl.textContent = '请输入手机号'; return; }
     if (!pass) { errEl.textContent = '请输入密码'; return; }
-    var user = findUserByContact('phone', phone);
-    if (!user) { errEl.textContent = '该手机号未注册'; return; }
-    if (user.password !== hashPwd(pass)) { errEl.textContent = '密码错误'; return; }
-    state.currentUser = user; saveSession(user.username); updateUI(); closeAuth();
-    showToast('欢迎回来！');
+    Cloud.logInByPhone(phone, pass, function(err, user) {
+      if (err) { errEl.textContent = err; return; }
+      state.currentUser = user; updateUI(); closeAuth();
+      showToast('欢迎回来！');
+    });
 
   } else if (_loginTab === 'email') {
     var email = document.getElementById('loginEmail').value.trim();
     var pass = document.getElementById('loginEmailPass').value;
     if (!email) { errEl.textContent = '请输入邮箱'; return; }
     if (!pass) { errEl.textContent = '请输入密码'; return; }
-    var user = findUserByContact('email', email);
-    if (!user) { errEl.textContent = '该邮箱未注册'; return; }
-    if (user.password !== hashPwd(pass)) { errEl.textContent = '密码错误'; return; }
-    state.currentUser = user; saveSession(user.username); updateUI(); closeAuth();
-    showToast('欢迎回来！');
+    Cloud.logInByEmail(email, pass, function(err, user) {
+      if (err) { errEl.textContent = err; return; }
+      state.currentUser = user; updateUI(); closeAuth();
+      showToast('欢迎回来！');
+    });
   }
 }
-function doLogout(){state.currentUser=null;clearSession();updateUI();goPage('home');showToast('已退出登录');}
+
+function doLogout(){
+  Cloud.logOut(function() {
+    state.currentUser = null; updateUI(); goPage('home');
+    showToast('已退出登录');
+  });
+}
 
 function showToast(msg){
   var t=document.getElementById('toast');
@@ -686,38 +585,51 @@ function showToast(msg){
 
 function renderProfile(){
   var u=state.currentUser;if(!u)return;
-  var history=u.history||[];
-  var joined=u.joined?new Date(u.joined).toLocaleDateString('zh-CN'):'未知';
-  var initial=(u.nick||u.username)[0].toUpperCase();
-  document.getElementById('profileCard').innerHTML=
-    '<div class="profile-header"><div class="profile-avatar">'+initial+'</div><div><div class="profile-name">'+(u.nick||u.username)+'</div><div class="profile-joined">@'+u.username+' · 加入于 '+joined+'</div></div></div>'+
-    '<div class="profile-stats"><div class="profile-stat"><div class="profile-stat-num">'+history.length+'</div><div class="profile-stat-label">测算次数</div></div><div class="profile-stat"><div class="profile-stat-num">'+countType(history,'bazi')+'</div><div class="profile-stat-label">八字排盘</div></div><div class="profile-stat"><div class="profile-stat-num">'+countType(history,'tarot')+'</div><div class="profile-stat-label">塔罗占卜</div></div></div>'+
-    '<div class="profile-actions"><button class="btn-outline" onclick="clearHistory()">🗑 清空记录</button><button class="btn-outline danger" onclick="doLogout()">退出登录</button></div>';
-  var listEl=document.getElementById('historyList');
-  if(history.length===0){listEl.innerHTML='<div class="history-empty"><div class="history-empty-icon">📋</div>暂无测算记录</div>';}
-  else{
-    var icons={bazi:'🔮',zhouyi:'☯',tarot:'🃏',zodiac:'♈',name:'✍',fengshui:'🧭',numerology:'🔢'};
-    var names={bazi:'八字排盘',zhouyi:'周易占卜',tarot:'塔罗牌',zodiac:'星座运势',name:'姓名测算',fengshui:'风水罗盘',numerology:'数字能量'};
-    listEl.innerHTML='<h3 style="color:var(--gold);margin-bottom:10px;font-family:serif;font-size:16px">测算记录</h3>'+
-      history.slice().reverse().map(function(h){
-        var time=new Date(h.time).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
-        return '<div class="history-item"><div class="history-icon">'+(icons[h.type]||'🔮')+'</div><div class="history-info"><div class="history-title">'+(names[h.type]||h.type)+'</div><div class="history-detail">'+(h.detail||'')+'</div></div><div class="history-time">'+time+'</div></div>';
-      }).join('');
-  }
+  // Load history from cloud if available
+  Cloud.loadHistory(function(err, history) {
+    if (!err && history) {
+      state.currentUser.history = history;
+      u = state.currentUser;
+    }
+    var h = u.history || [];
+    var joined=u.joined?new Date(u.joined).toLocaleDateString('zh-CN'):'未知';
+    var initial=(u.nick||u.username)[0].toUpperCase();
+    var cloudBadge = Cloud.isCloud() ? ' <span style="font-size:10px;color:var(--accent-green)">☁ 已同步</span>' : '';
+    document.getElementById('profileCard').innerHTML=
+      '<div class="profile-header"><div class="profile-avatar">'+initial+'</div><div><div class="profile-name">'+(u.nick||u.username)+cloudBadge+'</div><div class="profile-joined">@'+u.username+' · 加入于 '+joined+'</div></div></div>'+
+      '<div class="profile-stats"><div class="profile-stat"><div class="profile-stat-num">'+h.length+'</div><div class="profile-stat-label">测算次数</div></div><div class="profile-stat"><div class="profile-stat-num">'+countType(h,'bazi')+'</div><div class="profile-stat-label">八字排盘</div></div><div class="profile-stat"><div class="profile-stat-num">'+countType(h,'tarot')+'</div><div class="profile-stat-label">塔罗占卜</div></div></div>'+
+      '<div class="profile-actions"><button class="btn-outline" onclick="clearHistory()">🗑 清空记录</button><button class="btn-outline danger" onclick="doLogout()">退出登录</button></div>';
+    var listEl=document.getElementById('historyList');
+    if(h.length===0){listEl.innerHTML='<div class="history-empty"><div class="history-empty-icon">📋</div>暂无测算记录</div>';}
+    else{
+      var icons={bazi:'🔮',zhouyi:'☯',tarot:'🃏',zodiac:'♈',name:'✍',fengshui:'🧭',numerology:'🔢'};
+      var names={bazi:'八字排盘',zhouyi:'周易占卜',tarot:'塔罗牌',zodiac:'星座运势',name:'姓名测算',fengshui:'风水罗盘',numerology:'数字能量'};
+      listEl.innerHTML='<h3 style="color:var(--gold);margin-bottom:10px;font-family:serif;font-size:16px">测算记录</h3>'+
+        h.slice().reverse().map(function(item){
+          var time=new Date(item.time).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+          return '<div class="history-item"><div class="history-icon">'+(icons[item.type]||'🔮')+'</div><div class="history-info"><div class="history-title">'+(names[item.type]||item.type)+'</div><div class="history-detail">'+(item.detail||'')+'</div></div><div class="history-time">'+time+'</div></div>';
+        }).join('');
+    }
+  });
 }
 function countType(h,t){return h.filter(function(x){return x.type===t;}).length;}
 function addHistory(type,detail){
   if(!state.currentUser)return;
-  var users=getUsers();var u=users[state.currentUser.username];if(!u)return;
-  if(!u.history)u.history=[];
-  u.history.push({type:type,detail:detail,time:new Date().toISOString()});
-  if(u.history.length>100)u.history=u.history.slice(-100);
-  users[state.currentUser.username]=u;saveUsers(users);state.currentUser=u;
+  Cloud.saveHistory(type, detail, function(err) {
+    if (!err && state.currentUser.history) {
+      state.currentUser.history.push({type:type,detail:detail,time:new Date().toISOString()});
+    }
+  });
 }
 function clearHistory(){
   if(!state.currentUser)return;
-  var users=getUsers();users[state.currentUser.username].history=[];
-  saveUsers(users);state.currentUser.history=[];renderProfile();showToast('记录已清空');
+  Cloud.clearHistory(function(err) {
+    if (!err) {
+      state.currentUser.history = [];
+      renderProfile();
+      showToast('记录已清空');
+    }
+  });
 }
 
 // ===== Knowledge =====

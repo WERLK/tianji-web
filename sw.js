@@ -1,4 +1,4 @@
-var CACHE_NAME = 'tianji-v9';
+var CACHE_NAME = 'tianji-v10';
 var ASSETS = [
   '/tianji-web/',
   '/tianji-web/index.html',
@@ -6,6 +6,8 @@ var ASSETS = [
   '/tianji-web/js/utils.js',
   '/tianji-web/js/app.js',
   '/tianji-web/js/knowledge.js',
+  '/tianji-web/js/leancloud-config.js',
+  '/tianji-web/js/cloud.js',
   '/tianji-web/manifest.json',
   '/tianji-web/icons/icon-192.png',
   '/tianji-web/icons/icon-512.png'
