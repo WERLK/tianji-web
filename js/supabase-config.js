@@ -91,4 +91,4 @@ var SUPABASE_CONFIG = {
 };
 
 // Resend 邮件发送 API Key（用于密码重置等）
-var RESEND_KEY = 're_VNWKNrSQ_J1PuB5ZGnpNyENVXV5MVJ8X4';
+var RESEND_KEY = 're_Z3V61FoM_92to1zZeHwr1fCfeTW6k2zHM';
