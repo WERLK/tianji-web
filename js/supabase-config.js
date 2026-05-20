@@ -83,9 +83,9 @@
 // ============================================================
 
 var SUPABASE_CONFIG = {
-  enabled: false,
+  enabled: true,
 
   // 从 Supabase 控制台 > Settings > API 获取
-  url: '',
-  anonKey: ''
+  url: 'https://unkciqwuchynlzmoiixv.supabase.co',
+  anonKey: 'sb_publishable_qjYeVxMYrQnw_ac_LxihHg_YqHiVZih'
 };
