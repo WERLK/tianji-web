@@ -137,10 +137,12 @@ var Cloud = (function() {
   function signUp(username, password, attrs, cb) {
     onReady(function() {
       if (isCloud()) {
+        var isEmail = username.indexOf('@') > 0;
+        var email = isEmail ? username : username + '@tianji.local';
         var meta = { username: username };
         if (attrs.nick) meta.nick = attrs.nick;
         _authPost('/signup', {
-          email: username + '@tianji.local',
+          email: email,
           password: password,
           data: meta
         }).then(function(res) {
@@ -148,6 +150,12 @@ var Cloud = (function() {
           if (res.access_token) {
             _saveSession(res.access_token, res.refresh_token);
           }
+          // 保存账号映射，方便登录时查找
+          try {
+            var map = JSON.parse(localStorage.getItem('tianji_email_map') || '{}');
+            map[username] = email;
+            localStorage.setItem('tianji_email_map', JSON.stringify(map));
+          } catch(e) {}
           var user = res.user || {};
           _restPost('user_profiles', {
             id: user.id,
@@ -175,6 +183,12 @@ var Cloud = (function() {
           .then(function(res) {
             if (res.error) { cb(cloudErr(res.error)); return; }
             _saveSession(res.access_token, res.refresh_token);
+            // 保存映射
+            try {
+              var map = JSON.parse(localStorage.getItem('tianji_email_map') || '{}');
+              map[username] = email;
+              localStorage.setItem('tianji_email_map', JSON.stringify(map));
+            } catch(e) {}
             _restGet('user_profiles', '?select=*&id=eq.' + res.user.id)
               .then(function(profiles) {
                 var profile = (profiles && profiles[0]) || {};
