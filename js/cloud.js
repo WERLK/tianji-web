@@ -423,7 +423,7 @@ var Cloud = (function() {
           return Promise.resolve(profiles);
         })
         .then(function(profiles) {
-          if (!profiles || profiles.length === 0) { cb('该邮箱未注册'); return; }
+          if (!profiles || profiles.length === 0) { cb('该邮箱未注册'); return Promise.reject('not_found'); }
           var p = profiles[0];
           // 3. 存储 token
           return _restPost('user_profiles', { id: p.id, reset_token: token, reset_expires: expires, email: email }, true)
