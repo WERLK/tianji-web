@@ -433,12 +433,14 @@ var Cloud = (function() {
           // 4. 用 Resend 发邮件
           var resetUrl = window.location.origin + window.location.pathname + '#reset=' + token;
           var resendKey = (typeof RESEND_KEY !== 'undefined') ? RESEND_KEY : '';
+          var host = window.location.hostname;
+          var fromAddr = (host === 'localhost' || host === '127.0.0.1') ? 'onboarding@resend.dev' : 'noreply@' + host;
           if (resendKey) {
             return fetch('https://api.resend.com/emails', {
               method: 'POST',
               headers: { 'Authorization': 'Bearer ' + resendKey, 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                from: 'onboarding@resend.dev',
+                from: fromAddr,
                 to: email,
                 subject: '天机阁 - 密码重置',
                 html: '<div style="max-width:480px;margin:0 auto;padding:32px 20px;font-family:-apple-system,sans-serif;background:#0a0a1a;color:#e8d5a8;border-radius:12px;border:1px solid rgba(201,169,110,0.3)">' +
