@@ -459,7 +459,45 @@ function closeAuth(){document.getElementById('authOverlay').classList.remove('op
 function closeAuthIfBg(e){if(e.target===e.currentTarget)closeAuth();}
 function showLogin(){document.getElementById('loginPanel').style.display='';document.getElementById('registerPanel').style.display='none';document.getElementById('forgotPanel').style.display='none';document.getElementById('regError').textContent='';document.getElementById('forgotError').textContent='';document.getElementById('authTitle').textContent='登录';}
 function showRegister(){document.getElementById('loginPanel').style.display='none';document.getElementById('registerPanel').style.display='';document.getElementById('forgotPanel').style.display='none';document.getElementById('loginError').textContent='';document.getElementById('authTitle').textContent='注册';}
-function showForgotPassword(){document.getElementById('loginPanel').style.display='none';document.getElementById('registerPanel').style.display='none';document.getElementById('forgotPanel').style.display='';document.getElementById('loginError').textContent='';document.getElementById('forgotError').textContent='';document.getElementById('authTitle').textContent='忘记密码';}
+function showForgotPassword(){
+  document.getElementById('loginPanel').style.display='none';
+  document.getElementById('registerPanel').style.display='none';
+  document.getElementById('forgotPanel').style.display='';
+  document.getElementById('loginError').textContent='';
+  document.getElementById('forgotError').textContent='';
+  document.getElementById('authTitle').textContent='忘记密码';
+  _updateResetCooldown();
+}
+var _resetCooldownTimer = null;
+function _updateResetCooldown() {
+  if (_resetCooldownTimer) { clearInterval(_resetCooldownTimer); _resetCooldownTimer = null; }
+  var btn = document.querySelector('#forgotPanel .btn-primary');
+  var cdEl = document.getElementById('resetCooldown');
+  if (!btn) return;
+  var cooldownEnd = parseInt(localStorage.getItem('tianji_reset_cd') || '0', 10);
+  function tick() {
+    var remain = Math.max(0, Math.ceil((cooldownEnd - Date.now()) / 1000));
+    if (remain > 0) {
+      btn.disabled = true;
+      btn.textContent = '发送重置链接';
+      if (cdEl) cdEl.textContent = '操作过于频繁，请 ' + remain + ' 秒后重试';
+      else {
+        var sp = document.createElement('div');
+        sp.id = 'resetCooldown';
+        sp.style.cssText = 'font-size:12px;color:#e85d5d;text-align:center;margin-top:8px';
+        sp.textContent = '操作过于频繁，请 ' + remain + ' 秒后重试';
+        btn.parentNode.insertBefore(sp, btn.nextSibling);
+      }
+    } else {
+      btn.disabled = false;
+      if (cdEl) cdEl.textContent = '';
+      clearInterval(_resetCooldownTimer);
+      _resetCooldownTimer = null;
+    }
+  }
+  tick();
+  if (cooldownEnd > Date.now()) _resetCooldownTimer = setInterval(tick, 1000);
+}
 function doResetPassword(){
   var errEl=document.getElementById('forgotError');
   errEl.textContent='';
@@ -469,8 +507,8 @@ function doResetPassword(){
   var btn=document.querySelector('#forgotPanel .btn-primary');
   btn.textContent='发送中...';btn.disabled=true;
   Cloud.resetPassword(email,function(err){
-    btn.textContent='发送重置链接';btn.disabled=false;
-    if(err){errEl.textContent=err;return;}
+    if(err){btn.textContent='发送重置链接';btn.disabled=false;errEl.textContent=err;return;}
+    localStorage.setItem('tianji_reset_cd', String(Date.now() + 60 * 1000));
     document.getElementById('forgotPanel').innerHTML='<div style="text-align:center;padding:20px 0"><div style="font-size:40px;margin-bottom:12px">📧</div><div style="font-size:15px;font-weight:600;margin-bottom:8px;color:var(--gold)">重置链接已发送</div><div style="font-size:13px;color:var(--text-muted);line-height:1.6">请检查你的邮箱（包括垃圾邮件），<br>点击链接即可重置密码。</div><div class="auth-switch" style="margin-top:16px"><a href="javascript:void(0)" onclick="showLogin()">← 返回登录</a></div></div>';
   });
 }
