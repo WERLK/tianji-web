@@ -1,4 +1,4 @@
-var CACHE_NAME = 'tianji-v28';
+var CACHE_NAME = 'tianji-cache';
 var ASSETS = [
   '/tianji-web/',
   '/tianji-web/index.html',
@@ -36,19 +36,17 @@ self.addEventListener('activate', function(e) {
 
 self.addEventListener('fetch', function(e) {
   e.respondWith(
-    caches.match(e.request).then(function(cached) {
-      return cached || fetch(e.request).then(function(response) {
-        if (response.status === 200 && response.type === 'basic') {
-          var clone = response.clone();
-          caches.open(CACHE_NAME).then(function(cache) {
-            cache.put(e.request, clone);
-          });
-        }
-        return response;
-      }).catch(function() {
-        if (e.request.mode === 'navigate') {
-          return caches.match('/tianji-web/index.html');
-        }
+    fetch(e.request).then(function(response) {
+      if (response && response.status === 200) {
+        var clone = response.clone();
+        caches.open(CACHE_NAME).then(function(cache) {
+          cache.put(e.request, clone);
+        });
+      }
+      return response;
+    }).catch(function() {
+      return caches.match(e.request).then(function(cached) {
+        return cached || caches.match('/tianji-web/index.html');
       });
     })
   );
