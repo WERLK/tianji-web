@@ -47,7 +47,7 @@ function goPage(name) {
 
   // Lazy init
   if (name === 'daily' && !state._dailyInit) { renderDaily(); state._dailyInit = true; }
-  if (name === 'profile' && state.currentUser) { renderProfile(); initBgSettings(); }
+  if (name === 'profile') { if (state.currentUser) renderProfile(); initBgSettings(); }
 }
 
 function scrollPageTop() {
