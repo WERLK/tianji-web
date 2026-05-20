@@ -358,12 +358,16 @@ function doNumberAnalysis() {
 // ============================================
 var AUTH_KEY = 'tianji_users';
 var SESSION_KEY = 'tianji_session';
+var CODES_KEY = 'tianji_codes';
 function getUsers(){try{return JSON.parse(localStorage.getItem(AUTH_KEY))||{};}catch(e){return {};}}
 function saveUsers(u){localStorage.setItem(AUTH_KEY,JSON.stringify(u));}
 function getSession(){try{return JSON.parse(localStorage.getItem(SESSION_KEY));}catch(e){return null;}}
 function saveSession(u){localStorage.setItem(SESSION_KEY,JSON.stringify({username:u,ts:Date.now()}));}
 function clearSession(){localStorage.removeItem(SESSION_KEY);}
 function hashPwd(p){var h=0;for(var i=0;i<p.length;i++){h=((h<<5)-h+p.charCodeAt(i))|0;h=((h<<13)^h)|0;}return 'h'+Math.abs(h).toString(36)+p.length;}
+function getCodes(){try{return JSON.parse(localStorage.getItem(CODES_KEY))||{};}catch(e){return {};}}
+function saveCodes(c){localStorage.setItem(CODES_KEY,JSON.stringify(c));}
+function genCode(){return String(Math.floor(100000+Math.random()*900000));}
 
 function restoreSession(){
   var s=getSession();
@@ -386,34 +390,214 @@ function closeAuthIfBg(e){if(e.target===e.currentTarget)closeAuth();}
 function showLogin(){document.getElementById('loginPanel').style.display='';document.getElementById('registerPanel').style.display='none';document.getElementById('regError').textContent='';}
 function showRegister(){document.getElementById('loginPanel').style.display='none';document.getElementById('registerPanel').style.display='';document.getElementById('loginError').textContent='';}
 
-function doRegister(){
-  var username=document.getElementById('regUser').value.trim();
-  var nick=document.getElementById('regNick').value.trim();
-  var pass=document.getElementById('regPass').value;
-  var pass2=document.getElementById('regPass2').value;
-  var errEl=document.getElementById('regError');
-  if(!username||username.length<2||username.length>16){errEl.textContent='用户名需2-16个字符';return;}
-  if(!/^[a-zA-Z0-9\u4e00-\u9fa5_]+$/.test(username)){errEl.textContent='用户名仅支持中英文、数字和下划线';return;}
-  if(pass.length<6){errEl.textContent='密码至少6位';return;}
-  if(pass!==pass2){errEl.textContent='两次密码不一致';return;}
-  var users=getUsers();
-  if(users[username]){errEl.textContent='用户名已存在';return;}
-  users[username]={username:username,nick:nick||username,password:hashPwd(pass),joined:new Date().toISOString(),history:[]};
-  saveUsers(users);errEl.textContent='';
-  state.currentUser=users[username];saveSession(username);updateUI();closeAuth();
-  showToast('注册成功，欢迎 '+(nick||username)+'！');
+// Tab switching
+var _loginTab = 'username';
+var _regTab = 'username';
+function switchLoginTab(tab) {
+  _loginTab = tab;
+  var tabs = document.querySelectorAll('#loginPanel .auth-tab');
+  var contents = document.querySelectorAll('#loginPanel .auth-tab-content');
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].classList.toggle('active', tabs[i].textContent.indexOf(tab === 'username' ? '用户名' : tab === 'phone' ? '手机号' : '邮箱') >= 0);
+  }
+  for (var j = 0; j < contents.length; j++) {
+    contents[j].classList.toggle('active', contents[j].id === 'loginTab-' + tab);
+  }
 }
-function doLogin(){
-  var username=document.getElementById('loginUser').value.trim();
-  var pass=document.getElementById('loginPass').value;
-  var errEl=document.getElementById('loginError');
-  if(!username){errEl.textContent='请输入用户名';return;}
-  if(!pass){errEl.textContent='请输入密码';return;}
-  var users=getUsers();var user=users[username];
-  if(!user){errEl.textContent='用户不存在';return;}
-  if(user.password!==hashPwd(pass)){errEl.textContent='密码错误';return;}
-  state.currentUser=user;saveSession(username);updateUI();closeAuth();
-  showToast('欢迎回来，'+user.nick+'！');
+function switchRegTab(tab) {
+  _regTab = tab;
+  var tabs = document.querySelectorAll('#registerPanel .auth-tab');
+  var contents = document.querySelectorAll('#registerPanel .auth-tab-content');
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].classList.toggle('active', tabs[i].textContent.indexOf(tab === 'username' ? '用户名' : tab === 'phone' ? '手机号' : '邮箱') >= 0);
+  }
+  for (var j = 0; j < contents.length; j++) {
+    contents[j].classList.toggle('active', contents[j].id === 'regTab-' + tab);
+  }
+}
+
+// Send verification code (simulated)
+function sendCode(type) {
+  var contact, btnId;
+  if (type === 'phone') {
+    contact = document.getElementById('regPhone').value.trim();
+    btnId = 'phoneCodeBtn';
+    if (!/^1\d{10}$/.test(contact)) { document.getElementById('regError').textContent = '请输入正确的手机号'; return; }
+  } else {
+    contact = document.getElementById('regEmail').value.trim();
+    btnId = 'emailCodeBtn';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact)) { document.getElementById('regError').textContent = '请输入正确的邮箱'; return; }
+  }
+  var code = genCode();
+  var codes = getCodes();
+  codes[contact] = { code: code, ts: Date.now() };
+  saveCodes(codes);
+  showToast('验证码已发送：' + code + '（演示模式）');
+  var btn = document.getElementById(btnId);
+  btn.classList.add('disabled');
+  var sec = 60;
+  btn.textContent = sec + 's';
+  var timer = setInterval(function() {
+    sec--;
+    btn.textContent = sec + 's';
+    if (sec <= 0) { clearInterval(timer); btn.textContent = '获取验证码'; btn.classList.remove('disabled'); }
+  }, 1000);
+}
+
+// Social login (simulated - creates account or logs in)
+function doSocialLogin(platform) {
+  var prefix = platform === 'wechat' ? 'wx_' : 'qq_';
+  var fakeId = prefix + Math.random().toString(36).substr(2, 8);
+  var users = getUsers();
+  // Check if already linked
+  var found = null;
+  var keys = Object.keys(users);
+  for (var i = 0; i < keys.length; i++) {
+    if (users[keys[i]].socialId === fakeId) { found = users[keys[i]]; break; }
+  }
+  if (found) {
+    state.currentUser = found;
+    saveSession(found.username);
+    updateUI(); closeAuth();
+    showToast('欢迎回来，' + (found.nick || found.username) + '！');
+  } else {
+    var nick = platform === 'wechat' ? '微信用户' : 'QQ用户';
+    var username = fakeId;
+    users[username] = {
+      username: username, nick: nick, password: hashPwd(Math.random().toString(36)),
+      socialId: fakeId, socialType: platform,
+      joined: new Date().toISOString(), history: []
+    };
+    saveUsers(users);
+    state.currentUser = users[username];
+    saveSession(username);
+    updateUI(); closeAuth();
+    showToast('注册成功，欢迎 ' + nick + '！');
+  }
+}
+
+// Guest login
+function doGuestLogin() {
+  var guestId = 'guest_' + Math.random().toString(36).substr(2, 8);
+  var users = getUsers();
+  users[guestId] = {
+    username: guestId, nick: '游客', password: '',
+    isGuest: true, joined: new Date().toISOString(), history: []
+  };
+  saveUsers(users);
+  state.currentUser = users[guestId];
+  saveSession(guestId);
+  updateUI(); closeAuth();
+  showToast('游客模式，数据仅保存在本设备');
+}
+
+// Find user by phone or email
+function findUserByContact(type, contact) {
+  var users = getUsers();
+  var keys = Object.keys(users);
+  for (var i = 0; i < keys.length; i++) {
+    var u = users[keys[i]];
+    if (type === 'phone' && u.phone === contact) return u;
+    if (type === 'email' && u.email === contact) return u;
+  }
+  return null;
+}
+
+function doRegister() {
+  var errEl = document.getElementById('regError');
+  errEl.textContent = '';
+
+  if (_regTab === 'username') {
+    var username = document.getElementById('regUser').value.trim();
+    var nick = document.getElementById('regNick').value.trim();
+    var pass = document.getElementById('regPass').value;
+    var pass2 = document.getElementById('regPass2').value;
+    if (!username || username.length < 2 || username.length > 16) { errEl.textContent = '用户名需2-16个字符'; return; }
+    if (!/^[a-zA-Z0-9\u4e00-\u9fa5_]+$/.test(username)) { errEl.textContent = '用户名仅支持中英文、数字和下划线'; return; }
+    if (pass.length < 6) { errEl.textContent = '密码至少6位'; return; }
+    if (pass !== pass2) { errEl.textContent = '两次密码不一致'; return; }
+    var users = getUsers();
+    if (users[username]) { errEl.textContent = '用户名已存在'; return; }
+    users[username] = { username: username, nick: nick || username, password: hashPwd(pass), joined: new Date().toISOString(), history: [] };
+    saveUsers(users);
+    state.currentUser = users[username]; saveSession(username); updateUI(); closeAuth();
+    showToast('注册成功，欢迎 ' + (nick || username) + '！');
+
+  } else if (_regTab === 'phone') {
+    var phone = document.getElementById('regPhone').value.trim();
+    var code = document.getElementById('regPhoneCode').value.trim();
+    var pass = document.getElementById('regPhonePass').value;
+    if (!/^1\d{10}$/.test(phone)) { errEl.textContent = '请输入正确的手机号'; return; }
+    if (code.length !== 6) { errEl.textContent = '请输入6位验证码'; return; }
+    var codes = getCodes();
+    if (!codes[phone] || codes[phone].code !== code) { errEl.textContent = '验证码错误'; return; }
+    if (Date.now() - codes[phone].ts > 300000) { errEl.textContent = '验证码已过期'; return; }
+    if (pass.length < 6) { errEl.textContent = '密码至少6位'; return; }
+    if (findUserByContact('phone', phone)) { errEl.textContent = '该手机号已注册'; return; }
+    var users = getUsers();
+    var uname = 'u' + phone.substr(-4);
+    users[uname] = { username: uname, nick: phone.substr(0,3) + '****' + phone.substr(7), password: hashPwd(pass), phone: phone, joined: new Date().toISOString(), history: [] };
+    saveUsers(users);
+    state.currentUser = users[uname]; saveSession(uname); updateUI(); closeAuth();
+    showToast('注册成功！');
+
+  } else if (_regTab === 'email') {
+    var email = document.getElementById('regEmail').value.trim();
+    var code = document.getElementById('regEmailCode').value.trim();
+    var pass = document.getElementById('regEmailPass').value;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errEl.textContent = '请输入正确的邮箱'; return; }
+    if (code.length !== 6) { errEl.textContent = '请输入6位验证码'; return; }
+    var codes = getCodes();
+    if (!codes[email] || codes[email].code !== code) { errEl.textContent = '验证码错误'; return; }
+    if (Date.now() - codes[email].ts > 300000) { errEl.textContent = '验证码已过期'; return; }
+    if (pass.length < 6) { errEl.textContent = '密码至少6位'; return; }
+    if (findUserByContact('email', email)) { errEl.textContent = '该邮箱已注册'; return; }
+    var users = getUsers();
+    var uname = 'e' + email.split('@')[0] + '_' + Math.floor(Math.random()*1000);
+    users[uname] = { username: uname, nick: email.split('@')[0], password: hashPwd(pass), email: email, joined: new Date().toISOString(), history: [] };
+    saveUsers(users);
+    state.currentUser = users[uname]; saveSession(uname); updateUI(); closeAuth();
+    showToast('注册成功！');
+  }
+}
+
+function doLogin() {
+  var errEl = document.getElementById('loginError');
+  errEl.textContent = '';
+
+  if (_loginTab === 'username') {
+    var username = document.getElementById('loginUser').value.trim();
+    var pass = document.getElementById('loginPass').value;
+    if (!username) { errEl.textContent = '请输入用户名'; return; }
+    if (!pass) { errEl.textContent = '请输入密码'; return; }
+    var users = getUsers(); var user = users[username];
+    if (!user) { errEl.textContent = '用户不存在'; return; }
+    if (user.password !== hashPwd(pass)) { errEl.textContent = '密码错误'; return; }
+    state.currentUser = user; saveSession(username); updateUI(); closeAuth();
+    showToast('欢迎回来，' + (user.nick || user.username) + '！');
+
+  } else if (_loginTab === 'phone') {
+    var phone = document.getElementById('loginPhone').value.trim();
+    var pass = document.getElementById('loginPhonePass').value;
+    if (!phone) { errEl.textContent = '请输入手机号'; return; }
+    if (!pass) { errEl.textContent = '请输入密码'; return; }
+    var user = findUserByContact('phone', phone);
+    if (!user) { errEl.textContent = '该手机号未注册'; return; }
+    if (user.password !== hashPwd(pass)) { errEl.textContent = '密码错误'; return; }
+    state.currentUser = user; saveSession(user.username); updateUI(); closeAuth();
+    showToast('欢迎回来！');
+
+  } else if (_loginTab === 'email') {
+    var email = document.getElementById('loginEmail').value.trim();
+    var pass = document.getElementById('loginEmailPass').value;
+    if (!email) { errEl.textContent = '请输入邮箱'; return; }
+    if (!pass) { errEl.textContent = '请输入密码'; return; }
+    var user = findUserByContact('email', email);
+    if (!user) { errEl.textContent = '该邮箱未注册'; return; }
+    if (user.password !== hashPwd(pass)) { errEl.textContent = '密码错误'; return; }
+    state.currentUser = user; saveSession(user.username); updateUI(); closeAuth();
+    showToast('欢迎回来！');
+  }
 }
 function doLogout(){state.currentUser=null;clearSession();updateUI();goPage('home');showToast('已退出登录');}
 
