@@ -1,28 +1,35 @@
 // ============================================================
 // Cloud Module - 云端数据模块
 // 支持 Supabase（云端）和 localStorage（本地）双模式
+// 直接使用 Supabase REST API，无需 SDK
 // ============================================================
 var Cloud = (function() {
   var _mode = 'local';
   var _ready = false;
   var _pendingInit = [];
-  var _supabase = null;
+  var _url = '';
+  var _key = '';
+  var _accessToken = '';
+  var _refreshToken = '';
 
   // ===== 初始化 =====
   function init() {
     if (typeof SUPABASE_CONFIG !== 'undefined' && SUPABASE_CONFIG.enabled &&
-        SUPABASE_CONFIG.url && SUPABASE_CONFIG.anonKey &&
-        typeof supabase !== 'undefined' && supabase.createClient) {
+        SUPABASE_CONFIG.url && SUPABASE_CONFIG.anonKey) {
+      _url = SUPABASE_CONFIG.url.replace(/\/+$/, '');
+      _key = SUPABASE_CONFIG.anonKey;
+      // 恢复已保存的 session
       try {
-        _supabase = supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
-        _mode = 'cloud';
-        console.log('[Cloud] Supabase 已连接');
-      } catch (e) {
-        console.warn('[Cloud] Supabase 初始化失败，降级到本地模式', e);
-        _mode = 'local';
-      }
+        var saved = JSON.parse(localStorage.getItem('tianji_sb_session') || '{}');
+        if (saved.access_token && saved.refresh_token) {
+          _accessToken = saved.access_token;
+          _refreshToken = saved.refresh_token;
+        }
+      } catch(e) {}
+      _mode = 'cloud';
+      console.log('[Cloud] Supabase REST 模式已连接');
     } else {
-      console.log('[Cloud] 本地模式（未配置或SDK未加载）');
+      console.log('[Cloud] 本地模式（未配置 Supabase）');
     }
     _ready = true;
     for (var i = 0; i < _pendingInit.length; i++) _pendingInit[i]();
@@ -32,19 +39,96 @@ var Cloud = (function() {
   function onReady(fn) { _ready ? fn() : _pendingInit.push(fn); }
   function isCloud() { return _mode === 'cloud'; }
 
+  // ===== REST API 工具 =====
+  function _headers(useAuth) {
+    var h = {
+      'apikey': _key,
+      'Content-Type': 'application/json'
+    };
+    if (useAuth && _accessToken) {
+      h['Authorization'] = 'Bearer ' + _accessToken;
+    }
+    return h;
+  }
+
+  function _saveSession(access_token, refresh_token) {
+    _accessToken = access_token || '';
+    _refreshToken = refresh_token || '';
+    localStorage.setItem('tianji_sb_session', JSON.stringify({
+      access_token: _accessToken,
+      refresh_token: _refreshToken
+    }));
+  }
+
+  function _clearSession() {
+    _accessToken = '';
+    _refreshToken = '';
+    localStorage.removeItem('tianji_sb_session');
+  }
+
+  // Auth REST API
+  function _authPost(path, body) {
+    return fetch(_url + '/auth/v1' + path, {
+      method: 'POST',
+      headers: {
+        'apikey': _key,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    }).then(function(r) { return r.json(); });
+  }
+
+  function _authGet(path) {
+    return fetch(_url + '/auth/v1' + path, {
+      method: 'GET',
+      headers: {
+        'apikey': _key,
+        'Authorization': 'Bearer ' + _accessToken
+      }
+    }).then(function(r) {
+      if (r.status === 401) { _clearSession(); return null; }
+      return r.json();
+    });
+  }
+
+  // PostgREST API
+  function _restGet(table, query) {
+    var url = _url + '/rest/v1/' + table + (query || '');
+    return fetch(url, {
+      headers: _headers(true)
+    }).then(function(r) { return r.json(); });
+  }
+
+  function _restPost(table, body, upsert) {
+    var h = _headers(true);
+    if (upsert) h['Prefer'] = 'resolution=merge-duplicates';
+    return fetch(_url + '/rest/v1/' + table, {
+      method: 'POST',
+      headers: h,
+      body: JSON.stringify(body)
+    }).then(function(r) { return r.json(); });
+  }
+
+  function _restDelete(table, query) {
+    return fetch(_url + '/rest/v1/' + table + (query || ''), {
+      method: 'DELETE',
+      headers: _headers(true)
+    }).then(function(r) { return r.json(); });
+  }
+
   // ===== Supabase 用户 → 本地用户对象 =====
-  function sbToLocal(authData, profile) {
-    var meta = (authData && authData.user && authData.user.user_metadata) || {};
+  function sbToLocal(user, profile) {
+    var meta = (user && user.user_metadata) || {};
     return {
-      username: (authData && authData.user && authData.user.email) || meta.username || (authData && authData.user && authData.user.id) || '',
-      userId: (authData && authData.user && authData.user.id) || '',
+      username: user.email || meta.username || user.id || '',
+      userId: user.id || '',
       nick: (profile && profile.nick) || meta.nick || meta.full_name || '用户',
-      phone: (authData && authData.user && authData.user.phone) || '',
-      email: (authData && authData.user && authData.user.email) || '',
+      phone: user.phone || '',
+      email: user.email || '',
       avatar: (profile && profile.avatar) || meta.avatar || '',
       socialType: (profile && profile.social_type) || meta.socialType || '',
       isGuest: (profile && profile.is_guest) || false,
-      joined: (authData && authData.user && authData.user.created_at) || new Date().toISOString(),
+      joined: user.created_at || new Date().toISOString(),
       history: []
     };
   }
@@ -55,25 +139,24 @@ var Cloud = (function() {
       if (isCloud()) {
         var meta = { username: username };
         if (attrs.nick) meta.nick = attrs.nick;
-        _supabase.auth.signUp({
+        _authPost('/signup', {
           email: username + '@tianji.local',
           password: password,
           data: meta
         }).then(function(res) {
           if (res.error) { cb(cloudErr(res.error)); return; }
-          // 创建 profile
-          if (res.data && res.data.user) {
-            _supabase.from('user_profiles').upsert({
-              id: res.data.user.id,
-              nick: attrs.nick || username
-            }).then(function() {
-              cb(null, sbToLocal(res.data, { nick: attrs.nick || username }));
-            }).catch(function() {
-              cb(null, sbToLocal(res.data, { nick: attrs.nick || username }));
-            });
-          } else {
-            cb(null, sbToLocal(res.data, {}));
+          if (res.access_token) {
+            _saveSession(res.access_token, res.refresh_token);
           }
+          var user = res.user || {};
+          _restPost('user_profiles', {
+            id: user.id,
+            nick: attrs.nick || username
+          }, true).then(function() {
+            cb(null, sbToLocal(user, { nick: attrs.nick || username }));
+          }).catch(function() {
+            cb(null, sbToLocal(user, { nick: attrs.nick || username }));
+          });
         }).catch(function(e) { cb(cloudErr(e)); });
       } else {
         cb(null, localSignUp(username, password, attrs));
@@ -85,18 +168,19 @@ var Cloud = (function() {
   function logIn(username, password, cb) {
     onReady(function() {
       if (isCloud()) {
-        // Try email login with stored mapping
         var mapping = localGetEmailMapping();
         var email = mapping[username] || username;
         if (email.indexOf('@') === -1) email = email + '@tianji.local';
-        _supabase.auth.signInWithPassword({ email: email, password: password })
+        _authPost('/token?grant_type=password', { email: email, password: password })
           .then(function(res) {
             if (res.error) { cb(cloudErr(res.error)); return; }
-            _supabase.from('user_profiles').select('*').eq('id', res.data.user.id).single()
-              .then(function(pRes) {
-                cb(null, sbToLocal(res.data, pRes.data));
+            _saveSession(res.access_token, res.refresh_token);
+            _restGet('user_profiles', '?select=*&id=eq.' + res.user.id)
+              .then(function(profiles) {
+                var profile = (profiles && profiles[0]) || {};
+                cb(null, sbToLocal(res.user, profile));
               }).catch(function() {
-                cb(null, sbToLocal(res.data, {}));
+                cb(null, sbToLocal(res.user, {}));
               });
           }).catch(function(e) { cb(cloudErr(e)); });
       } else {
@@ -108,14 +192,16 @@ var Cloud = (function() {
   function logInByPhone(phone, password, cb) {
     onReady(function() {
       if (isCloud()) {
-        _supabase.auth.signInWithPassword({ phone: phone, password: password })
+        _authPost('/token?grant_type=password', { phone: phone, password: password })
           .then(function(res) {
             if (res.error) { cb(cloudErr(res.error)); return; }
-            _supabase.from('user_profiles').select('*').eq('id', res.data.user.id).single()
-              .then(function(pRes) {
-                cb(null, sbToLocal(res.data, pRes.data));
+            _saveSession(res.access_token, res.refresh_token);
+            _restGet('user_profiles', '?select=*&id=eq.' + res.user.id)
+              .then(function(profiles) {
+                var profile = (profiles && profiles[0]) || {};
+                cb(null, sbToLocal(res.user, profile));
               }).catch(function() {
-                cb(null, sbToLocal(res.data, {}));
+                cb(null, sbToLocal(res.user, {}));
               });
           }).catch(function(e) { cb(cloudErr(e)); });
       } else {
@@ -127,14 +213,16 @@ var Cloud = (function() {
   function logInByEmail(email, password, cb) {
     onReady(function() {
       if (isCloud()) {
-        _supabase.auth.signInWithPassword({ email: email, password: password })
+        _authPost('/token?grant_type=password', { email: email, password: password })
           .then(function(res) {
             if (res.error) { cb(cloudErr(res.error)); return; }
-            _supabase.from('user_profiles').select('*').eq('id', res.data.user.id).single()
-              .then(function(pRes) {
-                cb(null, sbToLocal(res.data, pRes.data));
+            _saveSession(res.access_token, res.refresh_token);
+            _restGet('user_profiles', '?select=*&id=eq.' + res.user.id)
+              .then(function(profiles) {
+                var profile = (profiles && profiles[0]) || {};
+                cb(null, sbToLocal(res.user, profile));
               }).catch(function() {
-                cb(null, sbToLocal(res.data, {}));
+                cb(null, sbToLocal(res.user, {}));
               });
           }).catch(function(e) { cb(cloudErr(e)); });
       } else {
@@ -148,19 +236,12 @@ var Cloud = (function() {
     onReady(function() {
       if (isCloud()) {
         var isPhone = /^1\d{10}$/.test(contact);
-        if (isPhone) {
-          _supabase.auth.signInWithOtp({ phone: contact })
-            .then(function(res) {
-              if (res.error) { cb(cloudErr(res.error)); return; }
-              cb(null, null);
-            }).catch(function(e) { cb(cloudErr(e)); });
-        } else {
-          _supabase.auth.signInWithOtp({ email: contact })
-            .then(function(res) {
-              if (res.error) { cb(cloudErr(res.error)); return; }
-              cb(null, null);
-            }).catch(function(e) { cb(cloudErr(e)); });
-        }
+        var body = isPhone ? { phone: contact } : { email: contact };
+        _authPost('/otp', body)
+          .then(function(res) {
+            if (res.error) { cb(cloudErr(res.error)); return; }
+            cb(null, null);
+          }).catch(function(e) { cb(cloudErr(e)); });
       } else {
         var code = String(Math.floor(100000 + Math.random() * 900000));
         var codes = localGetCodes();
@@ -175,15 +256,17 @@ var Cloud = (function() {
     onReady(function() {
       if (isCloud()) {
         var isPhone = /^1\d{10}$/.test(contact);
-        var params = isPhone ? { phone: contact, otp: code } : { email: contact, otp: code };
-        _supabase.auth.verifyOtp(params)
+        var body = isPhone ? { phone: contact, otp: code, type: 'sms' } : { email: contact, otp: code, type: 'email' };
+        _authPost('/verify', body)
           .then(function(res) {
             if (res.error) { cb(cloudErr(res.error)); return; }
-            _supabase.from('user_profiles').select('*').eq('id', res.data.user.id).single()
-              .then(function(pRes) {
-                cb(null, sbToLocal(res.data, pRes.data));
+            _saveSession(res.access_token, res.refresh_token);
+            _restGet('user_profiles', '?select=*&id=eq.' + res.user.id)
+              .then(function(profiles) {
+                var profile = (profiles && profiles[0]) || {};
+                cb(null, sbToLocal(res.user, profile));
               }).catch(function() {
-                cb(null, sbToLocal(res.data, {}));
+                cb(null, sbToLocal(res.user, {}));
               });
           }).catch(function(e) { cb(cloudErr(e)); });
       } else {
@@ -196,10 +279,10 @@ var Cloud = (function() {
           localStorage.setItem('tianji_session', JSON.stringify({ username: found.username, ts: Date.now() }));
           cb(null, found);
         } else {
-          var isPhone = /^1\d{10}$/.test(contact);
-          var uname = isPhone ? ('u' + contact.substr(-4)) : ('e' + contact.split('@')[0] + '_' + Math.floor(Math.random() * 1000));
-          var nick = isPhone ? (contact.substr(0,3) + '****' + contact.substr(7)) : contact.split('@')[0];
-          users[uname] = { username: uname, nick: nick, password: '', phone: isPhone ? contact : '', email: isPhone ? '' : contact, joined: new Date().toISOString(), history: [] };
+          var isPhone2 = /^1\d{10}$/.test(contact);
+          var uname = isPhone2 ? ('u' + contact.substr(-4)) : ('e' + contact.split('@')[0] + '_' + Math.floor(Math.random() * 1000));
+          var nick = isPhone2 ? (contact.substr(0,3) + '****' + contact.substr(7)) : contact.split('@')[0];
+          users[uname] = { username: uname, nick: nick, password: '', phone: isPhone2 ? contact : '', email: isPhone2 ? '' : contact, joined: new Date().toISOString(), history: [] };
           localStorage.setItem('tianji_users', JSON.stringify(users));
           localStorage.setItem('tianji_session', JSON.stringify({ username: uname, ts: Date.now() }));
           cb(null, users[uname]);
@@ -212,33 +295,36 @@ var Cloud = (function() {
   function socialLogin(platform, cb) {
     onReady(function() {
       if (isCloud()) {
-        var providerMap = {
-          wechat: 'wechat',
-          qq: 'qq',
-          apple: 'apple'
-        };
+        var providerMap = { wechat: 'wechat', qq: 'qq', apple: 'apple' };
         var provider = providerMap[platform];
         if (!provider) { cb('不支持的平台'); return; }
-
-        // Supabase OAuth
-        _supabase.auth.signInWithOAuth({
-          provider: provider,
-          options: { redirectTo: window.location.origin + window.location.pathname }
-        }).then(function(res) {
-          if (res.error) {
-            console.warn('[Cloud] OAuth 未配置，使用演示模式:', platform);
-            localSocialLogin(platform, cb);
-            return;
-          }
-          // Redirect will happen automatically
-        }).catch(function(e) {
-          console.warn('[Cloud] OAuth 失败，使用演示模式:', platform);
-          localSocialLogin(platform, cb);
-        });
+        // 跳转到 Supabase OAuth 页面
+        var redirectUrl = window.location.origin + window.location.pathname;
+        var oauthUrl = _url + '/auth/v1/authorize?provider=' + provider +
+          '&redirect_to=' + encodeURIComponent(redirectUrl);
+        window.location.href = oauthUrl;
+        // OAuth 回调后需要处理 hash 中的 token
+        return;
       } else {
         localSocialLogin(platform, cb);
       }
     });
+  }
+
+  // 处理 OAuth 回调（从 URL hash 中提取 token）
+  function handleOAuthCallback() {
+    if (!isCloud()) return;
+    var hash = window.location.hash;
+    if (hash.indexOf('access_token=') === -1) return;
+    var params = {};
+    hash.substr(1).split('&').forEach(function(p) {
+      var kv = p.split('=');
+      params[decodeURIComponent(kv[0])] = decodeURIComponent(kv[1] || '');
+    });
+    if (params.access_token) {
+      _saveSession(params.access_token, params.refresh_token);
+      window.location.hash = '';
+    }
   }
 
   // ===== 游客登录 =====
@@ -247,25 +333,25 @@ var Cloud = (function() {
       if (isCloud()) {
         var fakeEmail = 'guest_' + Math.random().toString(36).substr(2, 8) + '@tianji.guest';
         var fakePass = 'guest_' + Date.now();
-        _supabase.auth.signUp({
+        _authPost('/signup', {
           email: fakeEmail,
           password: fakePass,
           data: { isGuest: true, nick: '游客' }
         }).then(function(res) {
           if (res.error) { cb(cloudErr(res.error)); return; }
-          if (res.data && res.data.user) {
-            _supabase.from('user_profiles').upsert({
-              id: res.data.user.id,
-              nick: '游客',
-              is_guest: true
-            }).then(function() {
-              cb(null, sbToLocal(res.data, { nick: '游客', is_guest: true }));
-            }).catch(function() {
-              cb(null, sbToLocal(res.data, { nick: '游客', is_guest: true }));
-            });
-          } else {
-            cb(null, sbToLocal(res.data, { nick: '游客', is_guest: true }));
+          if (res.access_token) {
+            _saveSession(res.access_token, res.refresh_token);
           }
+          var user = res.user || {};
+          _restPost('user_profiles', {
+            id: user.id,
+            nick: '游客',
+            is_guest: true
+          }, true).then(function() {
+            cb(null, sbToLocal(user, { nick: '游客', is_guest: true }));
+          }).catch(function() {
+            cb(null, sbToLocal(user, { nick: '游客', is_guest: true }));
+          });
         }).catch(function(e) { cb(cloudErr(e)); });
       } else {
         var guestId = 'guest_' + Math.random().toString(36).substr(2, 8);
@@ -281,14 +367,17 @@ var Cloud = (function() {
   // ===== 退出 =====
   function logOut(cb) {
     onReady(function() {
-      if (isCloud() && _supabase) {
-        _supabase.auth.signOut().then(function() {
-          localStorage.removeItem('tianji_session');
-          if (cb) cb(null);
-        }).catch(function() {
-          localStorage.removeItem('tianji_session');
-          if (cb) cb(null);
-        });
+      if (isCloud()) {
+        fetch(_url + '/auth/v1/logout', {
+          method: 'POST',
+          headers: {
+            'apikey': _key,
+            'Authorization': 'Bearer ' + _accessToken
+          }
+        }).catch(function() {});
+        _clearSession();
+        localStorage.removeItem('tianji_session');
+        if (cb) cb(null);
       } else {
         localStorage.removeItem('tianji_session');
         if (cb) cb(null);
@@ -299,19 +388,17 @@ var Cloud = (function() {
   // ===== 获取当前用户 =====
   function getCurrentUser(cb) {
     onReady(function() {
-      if (isCloud() && _supabase) {
-        _supabase.auth.getSession().then(function(res) {
-          if (res.data && res.data.session) {
-            var authData = res.data;
-            _supabase.from('user_profiles').select('*').eq('id', authData.session.user.id).single()
-              .then(function(pRes) {
-                cb(null, sbToLocal(authData, pRes.data));
-              }).catch(function() {
-                cb(null, sbToLocal(authData, {}));
-              });
-          } else {
-            cb(null, null);
-          }
+      if (isCloud()) {
+        if (!_accessToken) { cb(null, null); return; }
+        _authGet('/user').then(function(user) {
+          if (!user || user.error) { cb(null, null); return; }
+          _restGet('user_profiles', '?select=*&id=eq.' + user.id)
+            .then(function(profiles) {
+              var profile = (profiles && profiles[0]) || {};
+              cb(null, sbToLocal(user, profile));
+            }).catch(function() {
+              cb(null, sbToLocal(user, {}));
+            });
         }).catch(function() { cb(null, null); });
       } else {
         var s = localGetSession();
@@ -328,16 +415,14 @@ var Cloud = (function() {
   // ===== 数据同步 =====
   function saveHistory(type, detail, cb) {
     onReady(function() {
-      if (isCloud() && _supabase) {
-        _supabase.auth.getSession().then(function(res) {
-          if (!res.data || !res.data.session) { if (cb) cb(null); return; }
-          _supabase.from('user_history').insert({
-            user_id: res.data.session.user.id,
-            type: type,
-            detail: detail
-          }).then(function() { if (cb) cb(null); })
-            .catch(function(e) { console.warn('[Cloud] 保存记录失败:', e); if (cb) cb(null); });
-        });
+      if (isCloud()) {
+        if (!_accessToken) { if (cb) cb(null); return; }
+        _restPost('user_history', {
+          user_id: _parseJwt(_accessToken).sub,
+          type: type,
+          detail: detail
+        }).then(function() { if (cb) cb(null); })
+          .catch(function(e) { console.warn('[Cloud] 保存记录失败:', e); if (cb) cb(null); });
       } else {
         localSaveHistory(type, detail);
         if (cb) cb(null);
@@ -347,21 +432,16 @@ var Cloud = (function() {
 
   function loadHistory(cb) {
     onReady(function() {
-      if (isCloud() && _supabase) {
-        _supabase.auth.getSession().then(function(res) {
-          if (!res.data || !res.data.session) { cb(null, []); return; }
-          _supabase.from('user_history').select('*')
-            .eq('user_id', res.data.session.user.id)
-            .order('created_at', { ascending: false })
-            .limit(100)
-            .then(function(res) {
-              if (res.error) { cb(cloudErr(res.error)); return; }
-              var items = (res.data || []).map(function(r) {
-                return { type: r.type, detail: r.detail, time: r.created_at };
-              });
-              cb(null, items);
-            }).catch(function(e) { cb(cloudErr(e)); });
-        });
+      if (isCloud()) {
+        if (!_accessToken) { cb(null, []); return; }
+        var userId = _parseJwt(_accessToken).sub;
+        _restGet('user_history', '?select=*&user_id=eq.' + userId + '&order=created_at.desc&limit=100')
+          .then(function(data) {
+            var items = (data || []).map(function(r) {
+              return { type: r.type, detail: r.detail, time: r.created_at };
+            });
+            cb(null, items);
+          }).catch(function(e) { cb(cloudErr(e)); });
       } else {
         cb(null, localLoadHistory());
       }
@@ -370,19 +450,29 @@ var Cloud = (function() {
 
   function clearHistory(cb) {
     onReady(function() {
-      if (isCloud() && _supabase) {
-        _supabase.auth.getSession().then(function(res) {
-          if (!res.data || !res.data.session) { if (cb) cb(null); return; }
-          _supabase.from('user_history').delete()
-            .eq('user_id', res.data.session.user.id)
-            .then(function() { if (cb) cb(null); })
-            .catch(function(e) { if (cb) cb(cloudErr(e)); });
-        });
+      if (isCloud()) {
+        if (!_accessToken) { if (cb) cb(null); return; }
+        var userId = _parseJwt(_accessToken).sub;
+        _restDelete('user_history', '?user_id=eq.' + userId)
+          .then(function() { if (cb) cb(null); })
+          .catch(function(e) { if (cb) cb(cloudErr(e)); });
       } else {
         localClearHistory();
         if (cb) cb(null);
       }
     });
+  }
+
+  // ===== JWT 解析 =====
+  function _parseJwt(token) {
+    try {
+      var parts = token.split('.');
+      if (parts.length !== 3) return {};
+      var payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      return JSON.parse(decodeURIComponent(atob(payload).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join('')));
+    } catch(e) { return {}; }
   }
 
   // ===== 错误处理 =====
@@ -392,6 +482,7 @@ var Cloud = (function() {
     if (e && e.message) msg = e.message;
     else if (e && e.msg) msg = e.msg;
     else if (e && e.error_description) msg = e.error_description;
+    else if (e && e.error) msg = typeof e.error === 'string' ? e.error : e.error.message || '';
     else msg = '操作失败';
     var map = {
       'User already registered': '该账号已注册',
@@ -531,6 +622,7 @@ var Cloud = (function() {
     getCurrentUser: getCurrentUser,
     saveHistory: saveHistory,
     loadHistory: loadHistory,
-    clearHistory: clearHistory
+    clearHistory: clearHistory,
+    handleOAuthCallback: handleOAuthCallback
   };
 })();
