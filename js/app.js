@@ -444,36 +444,112 @@ function sendCode(type) {
   }, 1000);
 }
 
-// Social login (simulated - creates account or logs in)
+// ============================================
+// Social Login Configuration
+// ============================================
+// To enable real WeChat/QQ login, fill in your API config below
+// and deploy a backend (LeanCloud / Cloudflare Workers / etc.)
+var SOCIAL_CONFIG = {
+  wechat: {
+    enabled: false,
+    appId: '',
+    redirectUri: '',
+    authUrl: 'https://open.weixin.qq.com/connect/qrconnect'
+  },
+  qq: {
+    enabled: false,
+    appId: '',
+    redirectUri: '',
+    authUrl: 'https://graph.qq.com/oauth2.0/authorize'
+  },
+  apple: {
+    enabled: false,
+    clientId: '',    // Your Service ID from Apple Developer
+    redirectUri: '',
+    authUrl: 'https://appleid.apple.com/auth/authorize'
+  }
+};
+
 function doSocialLogin(platform) {
-  var prefix = platform === 'wechat' ? 'wx_' : 'qq_';
-  var fakeId = prefix + Math.random().toString(36).substr(2, 8);
-  var users = getUsers();
-  // Check if already linked
-  var found = null;
-  var keys = Object.keys(users);
-  for (var i = 0; i < keys.length; i++) {
-    if (users[keys[i]].socialId === fakeId) { found = users[keys[i]]; break; }
+  var config = SOCIAL_CONFIG[platform];
+  var clientId = config.appId || config.clientId || '';
+  if (config && config.enabled && clientId) {
+    var oauthState = platform + '_' + Date.now();
+    var url = config.authUrl +
+      '?client_id=' + clientId +
+      '&redirect_uri=' + encodeURIComponent(config.redirectUri) +
+      '&response_type=code' +
+      '&state=' + oauthState;
+    if (platform === 'wechat') {
+      url += '&scope=snsapi_login#wechat_redirect';
+    } else if (platform === 'qq') {
+      url += '&scope=get_user_info';
+    } else if (platform === 'apple') {
+      url += '&scope=name email&response_mode=form_post';
+    }
+    window.location.href = url;
+    return;
   }
-  if (found) {
-    state.currentUser = found;
-    saveSession(found.username);
-    updateUI(); closeAuth();
-    showToast('欢迎回来，' + (found.nick || found.username) + '！');
-  } else {
-    var nick = platform === 'wechat' ? '微信用户' : 'QQ用户';
-    var username = fakeId;
-    users[username] = {
-      username: username, nick: nick, password: hashPwd(Math.random().toString(36)),
-      socialId: fakeId, socialType: platform,
-      joined: new Date().toISOString(), history: []
-    };
-    saveUsers(users);
-    state.currentUser = users[username];
-    saveSession(username);
-    updateUI(); closeAuth();
-    showToast('注册成功，欢迎 ' + nick + '！');
+  doSocialLoginDemo(platform);
+}
+
+function doSocialLoginDemo(platform) {
+  var labels = { wechat: '微信', qq: 'QQ', apple: 'Apple' };
+  var avatars = { wechat: '💚', qq: '💙', apple: '🍎' };
+  var label = labels[platform] || platform;
+  var avatar = avatars[platform] || '👤';
+  var btn = document.querySelector('.social-btn.' + platform);
+  if (btn) {
+    btn.textContent = '⏳ 正在连接' + label + '...';
+    btn.style.pointerEvents = 'none';
   }
+  // Simulate network delay
+  setTimeout(function() {
+    if (btn) {
+      btn.textContent = platform === 'wechat' ? '📱 微信一键登录' : '🐧 QQ登录';
+      btn.style.pointerEvents = '';
+    }
+    var prefix = platform === 'wechat' ? 'wx_' : 'qq_';
+    var fakeId = prefix + Math.random().toString(36).substr(2, 8);
+    var users = getUsers();
+    var found = null;
+    var keys = Object.keys(users);
+    for (var i = 0; i < keys.length; i++) {
+      if (users[keys[i]].socialId === fakeId) { found = users[keys[i]]; break; }
+    }
+    if (found) {
+      state.currentUser = found;
+      saveSession(found.username);
+      updateUI(); closeAuth();
+      showToast('欢迎回来，' + (found.nick || found.username) + '！');
+    } else {
+      var nick = label + '用户' + Math.floor(Math.random() * 9000 + 1000);
+      var username = fakeId;
+      users[username] = {
+        username: username, nick: nick, avatar: avatar,
+        password: hashPwd(Math.random().toString(36)),
+        socialId: fakeId, socialType: platform,
+        joined: new Date().toISOString(), history: []
+      };
+      saveUsers(users);
+      state.currentUser = users[username];
+      saveSession(username);
+      updateUI(); closeAuth();
+      showToast(label + '登录成功，欢迎 ' + nick + '！');
+    }
+  }, 1200);
+}
+
+// Handle OAuth callback (for real API mode)
+// Call this on your callback page with URL params: ?code=xxx&state=xxx
+function handleOAuthCallback() {
+  var params = new URLSearchParams(window.location.search);
+  var code = params.get('code');
+  var state = params.get('state');
+  if (!code) return;
+  // Send code to your backend to exchange for access_token
+  // Then get user info and create/login account
+  // Example: fetch('/api/social-auth', { method: 'POST', body: JSON.stringify({ code, state }) })
 }
 
 // Guest login

@@ -299,6 +299,11 @@ select.form-input {
 .social-btn.wechat:active { background: rgba(7,193,96,0.1); }
 .social-btn.qq { border-color: rgba(18,183,245,0.3); }
 .social-btn.qq:active { background: rgba(18,183,245,0.1); }
+.social-btn.apple { border-color: rgba(255,255,255,0.2); }
+.social-btn.apple:active { background: rgba(255,255,255,0.05); }
+.social-icon { font-size: 18px; }
+.social-row { display: flex; gap: 10px; }
+.social-row .social-btn { flex: 1; }
 
 /* Auth Divider */
 .auth-divider {

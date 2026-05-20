@@ -282,8 +282,17 @@
 
       <!-- Social Login -->
       <div class="social-login">
-        <button class="social-btn wechat" onclick="doSocialLogin('wechat')">📱 微信一键登录</button>
-        <button class="social-btn qq" onclick="doSocialLogin('qq')">🐧 QQ登录</button>
+        <button class="social-btn wechat" onclick="doSocialLogin('wechat')">
+          <span class="social-icon">💬</span> 微信登录
+        </button>
+        <div class="social-row">
+          <button class="social-btn qq" onclick="doSocialLogin('qq')">
+            <span class="social-icon">🐧</span> QQ
+          </button>
+          <button class="social-btn apple" onclick="doSocialLogin('apple')">
+            <span class="social-icon">🍎</span> Apple
+          </button>
+        </div>
       </div>
 
       <div class="auth-divider"><span>或使用账号登录</span></div>
@@ -333,8 +342,17 @@
 
       <!-- Social Register -->
       <div class="social-login">
-        <button class="social-btn wechat" onclick="doSocialLogin('wechat')">📱 微信一键注册</button>
-        <button class="social-btn qq" onclick="doSocialLogin('qq')">🐧 QQ注册</button>
+        <button class="social-btn wechat" onclick="doSocialLogin('wechat')">
+          <span class="social-icon">💬</span> 微信一键注册
+        </button>
+        <div class="social-row">
+          <button class="social-btn qq" onclick="doSocialLogin('qq')">
+            <span class="social-icon">🐧</span> QQ
+          </button>
+          <button class="social-btn apple" onclick="doSocialLogin('apple')">
+            <span class="social-icon">🍎</span> Apple
+          </button>
+        </div>
       </div>
 
       <div class="auth-divider"><span>或使用账号注册</span></div>
