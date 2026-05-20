@@ -476,16 +476,17 @@ var _resetCooldownTimer = null;
 function _updateResetCooldown() {
   if (_resetCooldownTimer) { clearInterval(_resetCooldownTimer); _resetCooldownTimer = null; }
   var btn = document.querySelector('#forgotPanel .btn-primary');
-  var cdEl = document.getElementById('resetCooldown');
   if (!btn) return;
   var cooldownEnd = parseInt(localStorage.getItem('tianji_reset_cd') || '0', 10);
   function tick() {
+    var cdEl = document.getElementById('resetCooldown');
     var remain = Math.max(0, Math.ceil((cooldownEnd - Date.now()) / 1000));
     if (remain > 0) {
       btn.disabled = true;
-      btn.textContent = '发送重置链接';
-      if (cdEl) cdEl.textContent = '操作过于频繁，请 ' + remain + ' 秒后重试';
-      else {
+      if (cdEl) {
+        cdEl.textContent = '操作过于频繁，请 ' + remain + ' 秒后重试';
+        cdEl.style.display = '';
+      } else {
         var sp = document.createElement('div');
         sp.id = 'resetCooldown';
         sp.style.cssText = 'font-size:12px;color:#e85d5d;text-align:center;margin-top:8px';
@@ -494,9 +495,11 @@ function _updateResetCooldown() {
       }
     } else {
       btn.disabled = false;
-      if (cdEl) cdEl.textContent = '';
+      var el = document.getElementById('resetCooldown');
+      if (el) el.remove();
       clearInterval(_resetCooldownTimer);
       _resetCooldownTimer = null;
+      localStorage.removeItem('tianji_reset_cd');
     }
   }
   tick();
