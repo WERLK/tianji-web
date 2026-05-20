@@ -298,12 +298,11 @@ var Cloud = (function() {
         var providerMap = { wechat: 'wechat', qq: 'qq', apple: 'apple' };
         var provider = providerMap[platform];
         if (!provider) { cb('不支持的平台'); return; }
-        // 跳转到 Supabase OAuth 页面
+        sessionStorage.setItem('tianji_oauth_pending', '1');
         var redirectUrl = window.location.origin + window.location.pathname;
         var oauthUrl = _url + '/auth/v1/authorize?provider=' + provider +
           '&redirect_to=' + encodeURIComponent(redirectUrl);
         window.location.href = oauthUrl;
-        // OAuth 回调后需要处理 hash 中的 token
         return;
       } else {
         localSocialLogin(platform, cb);
@@ -312,10 +311,10 @@ var Cloud = (function() {
   }
 
   // 处理 OAuth 回调（从 URL hash 中提取 token）
-  function handleOAuthCallback() {
-    if (!isCloud()) return;
+  function handleOAuthCallback(cb) {
+    if (!isCloud()) { if (cb) cb(null, false); return; }
     var hash = window.location.hash;
-    if (hash.indexOf('access_token=') === -1) return;
+    if (hash.indexOf('access_token=') === -1) { if (cb) cb(null, false); return; }
     var params = {};
     hash.substr(1).split('&').forEach(function(p) {
       var kv = p.split('=');
@@ -324,6 +323,19 @@ var Cloud = (function() {
     if (params.access_token) {
       _saveSession(params.access_token, params.refresh_token);
       window.location.hash = '';
+      sessionStorage.removeItem('tianji_oauth_pending');
+      _authGet('/user').then(function(user) {
+        if (!user || user.error) { if (cb) cb('获取用户信息失败', false); return; }
+        _restGet('user_profiles', '?select=*&id=eq.' + user.id)
+          .then(function(profiles) {
+            var profile = (profiles && profiles[0]) || {};
+            if (cb) cb(null, sbToLocal(user, profile));
+          }).catch(function() {
+            if (cb) cb(null, sbToLocal(user, {}));
+          });
+      }).catch(function() { if (cb) cb('登录失败', false); });
+    } else {
+      if (cb) cb(null, false);
     }
   }
 

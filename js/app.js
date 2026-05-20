@@ -3,14 +3,23 @@ var state = { baziGender: 1, fsGender: 1, selectedZodiac: 0, selectedSpread: 0, 
 
 // ===== Init =====
 document.addEventListener('DOMContentLoaded', function() {
-  restoreSession();
-  renderDaily();
-  renderTarotSpreads();
-  renderZodiacGrid();
-  renderZodiacInfo();
-  renderKnowledgeList();
-  initBottomBar();
-  initFabTop();
+  // 先检查是否有 OAuth 回调
+  Cloud.handleOAuthCallback(function(err, user) {
+    if (user) {
+      state.currentUser = user;
+      updateUI();
+      showToast('欢迎，' + (user.nick || user.username) + '！');
+    } else {
+      restoreSession();
+    }
+    renderDaily();
+    renderTarotSpreads();
+    renderZodiacGrid();
+    renderZodiacInfo();
+    renderKnowledgeList();
+    initBottomBar();
+    initFabTop();
+  });
 });
 
 // ===== Page Navigation =====
