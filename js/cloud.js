@@ -396,6 +396,21 @@ var Cloud = (function() {
     });
   }
 
+  // ===== 忘记密码 =====
+  function resetPassword(email, cb) {
+    onReady(function() {
+      if (isCloud()) {
+        _authPost('/recover', { email: email })
+          .then(function(res) {
+            if (_isAuthError(res)) { cb(cloudErr(res)); return; }
+            cb(null);
+          }).catch(function(e) { cb(cloudErr(e)); });
+      } else {
+        cb('本地模式不支持密码重置，请直接注册新账号');
+      }
+    });
+  }
+
   // ===== 退出 =====
   function logOut(cb) {
     onReady(function() {
@@ -700,6 +715,7 @@ var Cloud = (function() {
     saveHistory: saveHistory,
     loadHistory: loadHistory,
     clearHistory: clearHistory,
-    handleOAuthCallback: handleOAuthCallback
+    handleOAuthCallback: handleOAuthCallback,
+    resetPassword: resetPassword
   };
 })();

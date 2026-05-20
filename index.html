@@ -461,7 +461,16 @@
       </div>
       <div class="auth-error" id="loginError"></div>
       <button class="btn-primary" style="width:100%" onclick="doLogin()">登录</button>
-      <div class="auth-switch">还没有账号？<a href="javascript:void(0)" onclick="showRegister()">立即注册</a></div>
+      <div class="auth-switch">还没有账号？<a href="javascript:void(0)" onclick="showRegister()">立即注册</a>　|　<a href="javascript:void(0)" onclick="showForgotPassword()">忘记密码</a></div>
+    </div>
+
+    <!-- Forgot Password Panel -->
+    <div id="forgotPanel" style="display:none">
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;line-height:1.6">输入注册时使用的邮箱，我们将发送密码重置链接到你的邮箱。</p>
+      <input class="auth-input" id="forgotEmail" placeholder="注册邮箱" autocomplete="email" type="email">
+      <div class="auth-error" id="forgotError"></div>
+      <button class="btn-primary" style="width:100%" onclick="doResetPassword()">发送重置链接</button>
+      <div class="auth-switch"><a href="javascript:void(0)" onclick="showLogin()">← 返回登录</a></div>
     </div>
 
     <!-- Register Panel -->
