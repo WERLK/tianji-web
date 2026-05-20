@@ -89,3 +89,6 @@ var SUPABASE_CONFIG = {
   url: 'https://unkciqwuchynlzmoiixv.supabase.co',
   anonKey: 'sb_publishable_qjYeVxMYrQnw_ac_LxihHg_YqHiVZih'
 };
+
+// Resend 邮件服务 API Key（用于密码重置等邮件发送）
+var RESEND_KEY = 're_VNWKNrSQ_J1PuB5ZGnpNyENVXV5MVJ8X4';

@@ -3,6 +3,14 @@ var state = { baziGender: 1, fsGender: 1, selectedZodiac: 0, selectedSpread: 0, 
 
 // ===== Init =====
 document.addEventListener('DOMContentLoaded', function() {
+  // 检查密码重置链接
+  var hash = window.location.hash;
+  if (hash.indexOf('#reset=') === 0) {
+    var token = hash.substring(7);
+    window.location.hash = '';
+    showResetPasswordPage(token);
+    return;
+  }
   // 先检查是否有 OAuth 回调
   Cloud.handleOAuthCallback(function(err, user) {
     if (user) {
@@ -419,9 +427,44 @@ function doResetPassword(){
   var email=document.getElementById('forgotEmail').value.trim();
   if(!email){errEl.textContent='请输入注册时使用的邮箱地址';return;}
   if(email.indexOf('@')===-1||email.indexOf('@tianji.local')>-1){errEl.textContent='请输入真实邮箱地址，不支持用户名重置';return;}
+  var btn=document.querySelector('#forgotPanel .btn-primary');
+  btn.textContent='发送中...';btn.disabled=true;
   Cloud.resetPassword(email,function(err){
+    btn.textContent='发送重置链接';btn.disabled=false;
     if(err){errEl.textContent=err;return;}
     document.getElementById('forgotPanel').innerHTML='<div style="text-align:center;padding:20px 0"><div style="font-size:40px;margin-bottom:12px">📧</div><div style="font-size:15px;font-weight:600;margin-bottom:8px;color:var(--gold)">重置链接已发送</div><div style="font-size:13px;color:var(--text-muted);line-height:1.6">请检查你的邮箱（包括垃圾邮件），<br>点击链接即可重置密码。</div><div class="auth-switch" style="margin-top:16px"><a href="javascript:void(0)" onclick="showLogin()">← 返回登录</a></div></div>';
+  });
+}
+function showResetPasswordPage(token){
+  Cloud.verifyResetToken(token,function(err,data){
+    var overlay=document.getElementById('authOverlay');
+    overlay.classList.add('open');
+    document.getElementById('loginPanel').style.display='none';
+    document.getElementById('registerPanel').style.display='none';
+    document.getElementById('forgotPanel').style.display='none';
+    document.getElementById('authTitle').textContent='设置新密码';
+    var panel=document.getElementById('forgotPanel');
+    panel.style.display='';
+    if(err){
+      panel.innerHTML='<div style="text-align:center;padding:20px 0"><div style="font-size:40px;margin-bottom:12px">⚠️</div><div style="font-size:14px;color:#e74c3c;margin-bottom:16px">'+err+'</div><div class="auth-switch"><a href="javascript:void(0)" onclick="closeAuth()">关闭</a></div></div>';
+      return;
+    }
+    panel.innerHTML='<p style="font-size:13px;color:var(--text-muted);margin-bottom:14px">为账号 <strong style="color:var(--gold)">'+(data.nick||'')+'</strong> 设置新密码</p><input class="auth-input" id="newPassInput" type="password" placeholder="新密码（至少6位）" autocomplete="new-password"><input class="auth-input" id="newPassInput2" type="password" placeholder="确认新密码" autocomplete="new-password" style="margin-top:10px"><div class="auth-error" id="resetError"></div><button class="btn-primary" style="width:100%" onclick="doSetNewPassword(\''+token+'\')">确认重置</button><div class="auth-switch"><a href="javascript:void(0)" onclick="closeAuth()">取消</a></div>';
+  });
+}
+function doSetNewPassword(token){
+  var errEl=document.getElementById('resetError');
+  errEl.textContent='';
+  var pass=document.getElementById('newPassInput').value;
+  var pass2=document.getElementById('newPassInput2').value;
+  if(!pass||pass.length<6){errEl.textContent='密码至少6位';return;}
+  if(pass!==pass2){errEl.textContent='两次密码不一致';return;}
+  var btn=document.querySelector('#forgotPanel .btn-primary');
+  btn.textContent='重置中...';btn.disabled=true;
+  Cloud.resetPasswordWithToken(token,pass,function(err){
+    btn.textContent='确认重置';btn.disabled=false;
+    if(err){errEl.textContent=err;return;}
+    document.getElementById('forgotPanel').innerHTML='<div style="text-align:center;padding:20px 0"><div style="font-size:40px;margin-bottom:12px">✅</div><div style="font-size:15px;font-weight:600;margin-bottom:8px;color:var(--gold)">密码重置成功</div><div style="font-size:13px;color:var(--text-muted);margin-bottom:16px">请使用新密码登录</div><div class="auth-switch"><a href="javascript:void(0)" onclick="showLogin()">← 去登录</a></div></div>';
   });
 }
 
