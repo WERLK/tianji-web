@@ -11,16 +11,18 @@ var Cloud = (function() {
   // ===== 初始化 =====
   function init() {
     if (typeof SUPABASE_CONFIG !== 'undefined' && SUPABASE_CONFIG.enabled &&
-        SUPABASE_CONFIG.url && SUPABASE_CONFIG.anonKey && typeof supabase !== 'undefined') {
+        SUPABASE_CONFIG.url && SUPABASE_CONFIG.anonKey &&
+        typeof supabase !== 'undefined' && supabase.createClient) {
       try {
         _supabase = supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
         _mode = 'cloud';
         console.log('[Cloud] Supabase 已连接');
       } catch (e) {
-        console.warn('[Cloud] Supabase 初始化失败，使用本地模式', e);
+        console.warn('[Cloud] Supabase 初始化失败，降级到本地模式', e);
+        _mode = 'local';
       }
     } else {
-      console.log('[Cloud] 本地模式（未配置 Supabase）');
+      console.log('[Cloud] 本地模式（未配置或SDK未加载）');
     }
     _ready = true;
     for (var i = 0; i < _pendingInit.length; i++) _pendingInit[i]();
