@@ -382,7 +382,7 @@ function doLifePath() {
   addHistory('numerology', '生命灵数 ' + result.num);
   document.getElementById('num-result').innerHTML =
     '<div class="result-area"><div class="card"><h3 style="color:var(--gold);margin-bottom:14px;font-family:serif;font-size:16px">你的生命灵数</h3>' +
-      '<div class="life-path-display"><div class="life-num">'+result.num+'</div><div><div style="font-size:12px;color:var(--text-muted);margin-bottom:2px">生命灵数</div><div style="font-size:16px;font-weight:600">'+result.num<=9?(['','领导','调解','创造','建设','冒险','照顾','思考','商业','理想'][result.num]||'大师'):result.num===11?'灵性导师':result.num===22?'建造大师':'治愈大师'+'</div></div></div>' +
+      '<div class="life-path-display"><div class="life-num">'+result.num+'</div><div><div style="font-size:12px;color:var(--text-muted);margin-bottom:2px">生命灵数</div><div style="font-size:16px;font-weight:600">'+(result.num<=9?(['','领导','调解','创造','建设','冒险','照顾','思考','商业','理想'][result.num]||'大师'):result.num===11?'灵性导师':result.num===22?'建造大师':'治愈大师')+'</div></div></div>' +
       '<div class="reading-block"><div class="reading-title">📖 灵数含义</div><div class="reading-text">'+result.meaning+'</div></div></div></div>';
 }
 function doNumberAnalysis() {

@@ -172,7 +172,7 @@ var Cloud = (function() {
   function signUp(username, password, attrs, cb) {
     onReady(function() {
       if (isCloud()) {
-        var isEmail = username.indexOf('@') > 0;
+        var isEmail = username.indexOf('@') > -1;
         var email = isEmail ? username : username + '@tianji.local';
         var meta = { username: username };
         if (attrs.nick) meta.nick = attrs.nick;
@@ -194,9 +194,10 @@ var Cloud = (function() {
           var user = res.user || {};
           _restPost('user_profiles', {
             id: user.id,
-            nick: attrs.nick || username
+            nick: attrs.nick || username,
+            email: isEmail ? username : ''
           }, true).then(function() {
-            cb(null, sbToLocal(user, { nick: attrs.nick || username }));
+            cb(null, sbToLocal(user, { nick: attrs.nick || username, email: isEmail ? username : '' }));
           }).catch(function() {
             cb(null, sbToLocal(user, { nick: attrs.nick || username }));
           });
