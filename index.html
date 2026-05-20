@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#0a0a1a">
+  <meta name="theme-color" content="#080810">
   <title>天机阁</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="css/style.css?v=10">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
+  <link rel="stylesheet" href="css/style.css?v=20">
 </head>
 <body>
 
@@ -22,392 +22,300 @@
   </div>
 </nav>
 
-<!-- Page Container -->
-<div class="pages" id="pages">
+<!-- ===== Pages ===== -->
 
-  <!-- Page: Home -->
-  <div class="page active" id="page-home">
-    <div class="page-scroll">
-      <div class="hero">
-        <div class="hero-content">
-          <div class="hero-badge">✨ 综合命理测算平台</div>
-          <h1 class="hero-title">天机阁</h1>
-          <p class="hero-sub">知命不惧 · 日日自新</p>
-        </div>
-      </div>
-      <div class="section">
-        <div class="module-grid">
-          <div class="module-card" onclick="goPage('daily')">
-            <div class="module-icon" style="background:rgba(201,169,110,0.12)">📅</div>
-            <div class="module-name">每日运势</div>
-            <div class="module-desc">综合运势 · 宜忌提示</div>
-          </div>
-          <div class="module-card" onclick="goPage('bazi')">
-            <div class="module-icon" style="background:rgba(108,92,231,0.12)">🔮</div>
-            <div class="module-name">八字命理</div>
-            <div class="module-desc">四柱排盘 · 五行分析</div>
-          </div>
-          <div class="module-card" onclick="goPage('zhouyi')">
-            <div class="module-icon" style="background:rgba(253,121,168,0.12)">☯</div>
-            <div class="module-name">周易占卜</div>
-            <div class="module-desc">六十四卦 · 爻辞解读</div>
-          </div>
-          <div class="module-card" onclick="goPage('tarot')">
-            <div class="module-icon" style="background:rgba(225,112,85,0.12)">🃏</div>
-            <div class="module-name">塔罗牌</div>
-            <div class="module-desc">大阿卡纳 · 多种牌阵</div>
-          </div>
-          <div class="module-card" onclick="goPage('zodiac')">
-            <div class="module-icon" style="background:rgba(0,184,148,0.12)">♈</div>
-            <div class="module-name">西方星座</div>
-            <div class="module-desc">十二星座 · 每日运势</div>
-          </div>
-          <div class="module-card" onclick="goPage('name')">
-            <div class="module-icon" style="background:rgba(253,203,110,0.12)">✍</div>
-            <div class="module-name">姓名测算</div>
-            <div class="module-desc">五格剖象 · 综合评分</div>
-          </div>
-          <div class="module-card" onclick="goPage('fengshui')">
-            <div class="module-icon" style="background:rgba(85,163,164,0.12)">🧭</div>
-            <div class="module-name">风水罗盘</div>
-            <div class="module-desc">八宅风水 · 吉凶方位</div>
-          </div>
-          <div class="module-card" onclick="goPage('numerology')">
-            <div class="module-icon" style="background:rgba(99,110,114,0.12)">🔢</div>
-            <div class="module-name">数字能量</div>
-            <div class="module-desc">生命灵数 · 号码分析</div>
-          </div>
-          <div class="module-card" onclick="goPage('knowledge')">
-            <div class="module-icon" style="background:rgba(162,155,254,0.12)">📖</div>
-            <div class="module-name">命理百科</div>
-            <div class="module-desc">阴阳五行 · 八字紫微 · 六爻相学</div>
-          </div>
-        </div>
+<!-- Home -->
+<div class="page active" id="page-home">
+  <div class="section">
+    <div class="hero">
+      <div class="hero-glow"></div>
+      <div class="hero-content">
+        <div class="hero-emoji">🔮</div>
+        <h1 class="hero-title">天机阁</h1>
+        <p class="hero-sub">探索命运的奥秘</p>
       </div>
     </div>
-  </div>
 
-  <!-- Page: Daily -->
-  <div class="page" id="page-daily">
-    <div class="page-scroll">
-      <div class="page-header"><span class="page-back" onclick="goPage('home')">←</span><h2>📅 每日运势</h2></div>
-      <div class="section" id="daily-date-label"></div>
-      <div class="section" id="daily-result"></div>
-    </div>
-  </div>
-
-  <!-- Page: Bazi -->
-  <div class="page" id="page-bazi">
-    <div class="page-scroll">
-      <div class="page-header"><span class="page-back" onclick="goPage('home')">←</span><h2>🔮 八字命理</h2></div>
-      <div class="section">
-        <div class="card">
-          <div class="form-row">
-            <div class="form-group"><label class="form-label">出生年份</label><input class="form-input" type="number" id="bazi-year" placeholder="1990" value="1990"></div>
-            <div class="form-group"><label class="form-label">月份</label><input class="form-input" type="number" id="bazi-month" placeholder="1" value="1" min="1" max="12"></div>
-          </div>
-          <div class="form-row">
-            <div class="form-group"><label class="form-label">日期</label><input class="form-input" type="number" id="bazi-day" placeholder="1" value="1" min="1" max="31"></div>
-            <div class="form-group"><label class="form-label">时辰</label>
-              <select class="form-input" id="bazi-hour">
-                <option value="0">子时 (23-01)</option><option value="1">丑时 (01-03)</option>
-                <option value="3">寅时 (03-05)</option><option value="5">卯时 (05-07)</option>
-                <option value="7">辰时 (07-09)</option><option value="9">巳时 (09-11)</option>
-                <option value="11">午时 (11-13)</option><option value="13">未时 (13-15)</option>
-                <option value="15">申时 (15-17)</option><option value="17">酉时 (17-19)</option>
-                <option value="19">戌时 (19-21)</option><option value="21">亥时 (21-23)</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">性别</label>
-            <div class="gender-btns">
-              <button class="gender-btn active" onclick="setGender('bazi',1,this)">男</button>
-              <button class="gender-btn" onclick="setGender('bazi',2,this)">女</button>
-            </div>
-          </div>
-          <button class="btn-primary" onclick="doBazi()">🔮 开始排盘</button>
-        </div>
+    <div class="module-grid">
+      <div class="module-card" onclick="goPage('daily')">
+        <div class="module-icon">📅</div>
+        <div class="module-name">今日运势</div>
+        <div class="module-desc">每日综合运势</div>
       </div>
-      <div class="section" id="bazi-result"></div>
-      <div class="section"><div class="knowledge-tip" onclick="showKnowledge('bazi')">📖 了解八字命理知识 → 十神体系 · 旺衰格局 · 大运流年</div></div>
-    </div>
-  </div>
-
-  <!-- Page: Zhouyi -->
-  <div class="page" id="page-zhouyi">
-    <div class="page-scroll">
-      <div class="page-header"><span class="page-back" onclick="goPage('home')">←</span><h2>☯ 周易占卜</h2></div>
-      <div class="section">
-        <div class="card">
-          <p style="color:var(--text-secondary);margin-bottom:20px;font-size:15px">心中默念所问之事，然后点击起卦</p>
-          <button class="btn-primary" id="zhouyi-btn" onclick="doZhouyi()">☯ 开始起卦</button>
-        </div>
+      <div class="module-card" onclick="goPage('bazi')">
+        <div class="module-icon">🔮</div>
+        <div class="module-name">八字排盘</div>
+        <div class="module-desc">四柱命理分析</div>
       </div>
-      <div class="section" id="zhouyi-result"></div>
-      <div class="section"><div class="knowledge-tip" onclick="showKnowledge('liuyao')">📖 了解六爻预测知识 → 起卦装卦 · 六亲用神 · 断卦精要</div></div>
-    </div>
-  </div>
-
-  <!-- Page: Tarot -->
-  <div class="page" id="page-tarot">
-    <div class="page-scroll">
-      <div class="page-header"><span class="page-back" onclick="goPage('home')">←</span><h2>🃏 塔罗牌</h2></div>
-      <div class="section">
-        <div class="card">
-          <label class="form-label">选择牌阵</label>
-          <div class="spread-options" id="tarot-spreads"></div>
-          <button class="btn-primary" id="tarot-btn" onclick="doTarot()">🃏 抽牌占卜</button>
-        </div>
+      <div class="module-card" onclick="goPage('zhouyi')">
+        <div class="module-icon">☯</div>
+        <div class="module-name">周易占卜</div>
+        <div class="module-desc">铜钱起卦</div>
       </div>
-      <div class="section" id="tarot-result"></div>
-      <div class="section"><div class="knowledge-tip" onclick="showKnowledge('basics')">📖 了解命理基础 → 阴阳五行 · 天干地支 · 八卦河洛</div></div>
-    </div>
-  </div>
-
-  <!-- Page: Zodiac -->
-  <div class="page" id="page-zodiac">
-    <div class="page-scroll">
-      <div class="page-header"><span class="page-back" onclick="goPage('home')">←</span><h2>♈ 西方星座</h2></div>
-      <div class="section">
-        <div class="card">
-          <div class="zodiac-grid" id="zodiac-grid"></div>
-          <div id="zodiac-info"></div>
-          <button class="btn-primary" onclick="doZodiac()">✨ 查看今日运势</button>
-        </div>
+      <div class="module-card" onclick="goPage('tarot')">
+        <div class="module-icon">🃏</div>
+        <div class="module-name">塔罗牌</div>
+        <div class="module-desc">西方神秘学</div>
       </div>
-      <div class="section" id="zodiac-result"></div>
-      <div class="section"><div class="knowledge-tip" onclick="showKnowledge('ziwei')">📖 了解紫微斗数 → 十二宫位 · 主星辅星 · 四化飞星</div></div>
-    </div>
-  </div>
-
-  <!-- Page: Name -->
-  <div class="page" id="page-name">
-    <div class="page-scroll">
-      <div class="page-header"><span class="page-back" onclick="goPage('home')">←</span><h2>✍ 姓名测算</h2></div>
-      <div class="section">
-        <div class="card">
-          <div class="form-group"><label class="form-label">请输入姓名</label><input class="form-input" id="name-input" placeholder="如：张三"></div>
-          <button class="btn-primary" onclick="doName()">✍ 开始测算</button>
-        </div>
+      <div class="module-card" onclick="goPage('zodiac')">
+        <div class="module-icon">♈</div>
+        <div class="module-name">星座运势</div>
+        <div class="module-desc">十二星座</div>
       </div>
-      <div class="section" id="name-result"></div>
-      <div class="section"><div class="knowledge-tip" onclick="showKnowledge('xiangxue')">📖 了解相学知识 → 面相手相 · 三停五官 · 十二宫</div></div>
-    </div>
-  </div>
-
-  <!-- Page: Fengshui -->
-  <div class="page" id="page-fengshui">
-    <div class="page-scroll">
-      <div class="page-header"><span class="page-back" onclick="goPage('home')">←</span><h2>🧭 风水罗盘</h2></div>
-      <div class="section">
-        <div class="card">
-          <div class="form-row">
-            <div class="form-group"><label class="form-label">出生年份</label><input class="form-input" type="number" id="fs-year" placeholder="1990" value="1990"></div>
-            <div class="form-group">
-              <label class="form-label">性别</label>
-              <div class="gender-btns">
-                <button class="gender-btn active" onclick="setGender('fs',1,this)">男</button>
-                <button class="gender-btn" onclick="setGender('fs',2,this)">女</button>
-              </div>
-            </div>
-          </div>
-          <button class="btn-primary" onclick="doFengShui()">🧭 开始测算</button>
-        </div>
+      <div class="module-card" onclick="goPage('name')">
+        <div class="module-icon">✍</div>
+        <div class="module-name">姓名测算</div>
+        <div class="module-desc">五格数理</div>
       </div>
-      <div class="section" id="fs-result"></div>
-      <div class="section"><div class="knowledge-tip" onclick="showKnowledge('sanshi')">📖 了解三式绝学 → 奇门遁甲 · 大六壬 · 太乙神数</div></div>
-    </div>
-  </div>
-
-  <!-- Page: Numerology -->
-  <div class="page" id="page-numerology">
-    <div class="page-scroll">
-      <div class="page-header"><span class="page-back" onclick="goPage('home')">←</span><h2>🔢 数字能量</h2></div>
-      <div class="section">
-        <div class="card">
-          <div class="form-group"><label class="form-label">出生日期</label><input class="form-input" type="date" id="num-birth" value="1990-01-01"></div>
-          <button class="btn-primary" onclick="doLifePath()">🔢 计算生命灵数</button>
-        </div>
-        <div class="card" style="margin-top:16px">
-          <div class="form-group"><label class="form-label">手机号 / 车牌号</label><input class="form-input" id="num-phone" placeholder="输入号码" inputmode="numeric"></div>
-          <button class="btn-primary" onclick="doNumberAnalysis()">📊 分析号码能量</button>
-        </div>
+      <div class="module-card" onclick="goPage('fengshui')">
+        <div class="module-icon">🧭</div>
+        <div class="module-name">风水罗盘</div>
+        <div class="module-desc">命卦方位</div>
       </div>
-      <div class="section" id="num-result"></div>
-    </div>
-  </div>
-
-  <!-- Page: Knowledge (命理百科) -->
-  <div class="page" id="page-knowledge">
-    <div class="page-scroll">
-      <div class="page-header"><span class="page-back" onclick="goPage('home')">←</span><h2>📖 命理百科</h2></div>
-      <div class="section" id="knowledge-list"></div>
-    </div>
-  </div>
-
-  <!-- Page: Knowledge Detail -->
-  <div class="page" id="page-knowledge-detail">
-    <div class="page-scroll">
-      <div class="page-header"><span class="page-back" id="knowledge-back-btn">←</span><h2 id="knowledge-detail-title"></h2></div>
-      <div class="section" id="knowledge-detail-content"></div>
-    </div>
-  </div>
-
-  <!-- Page: Profile -->
-  <div class="page" id="page-profile">
-    <div class="page-scroll">
-      <div class="page-header"><span class="page-back" onclick="goPage('home')">←</span><h2>👤 个人中心</h2></div>
-      <div class="section">
-        <div class="card" id="profileCard"></div>
-        <div id="historyList" style="margin-top:16px"></div>
+      <div class="module-card" onclick="goPage('numerology')">
+        <div class="module-icon">🔢</div>
+        <div class="module-name">数字能量</div>
+        <div class="module-desc">灵数号码</div>
       </div>
     </div>
-  </div>
 
+    <div class="card" style="margin-top:20px;padding:16px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <span style="font-size:20px">📚</span>
+        <span style="font-weight:600;color:var(--gold)">命理知识库</span>
+      </div>
+      <p style="font-size:13px;color:var(--text-muted);line-height:1.7">阴阳五行、天干地支、八字命理、紫微斗数、六爻占卜、面相手相……系统学习命理学知识。</p>
+      <button class="btn-primary" style="margin-top:12px;width:100%" onclick="goPage('knowledge')">进入知识库 →</button>
+    </div>
+  </div>
 </div>
 
-<!-- Auth Modal -->
-<div class="auth-overlay" id="authOverlay" onclick="closeAuthIfBg(event)">
-  <div class="auth-modal" id="authModal">
-    <button class="auth-close" onclick="closeAuth()">✕</button>
+<!-- Daily Fortune -->
+<div class="page" id="page-daily">
+  <div class="page-header"><button class="back-btn" onclick="goPage('home')">←</button><h2>📅 今日运势</h2></div>
+  <div class="section">
+    <div id="daily-date-label"></div>
+    <div id="daily-result"></div>
+  </div>
+</div>
 
-    <!-- Login Panel -->
-    <div class="auth-panel" id="loginPanel">
-      <div class="auth-header">
-        <div class="auth-icon">🔮</div>
-        <h2 class="auth-title">登录天机阁</h2>
-        <p class="auth-desc">登录后保存你的测算记录</p>
+<!-- Bazi -->
+<div class="page" id="page-bazi">
+  <div class="page-header"><button class="back-btn" onclick="goPage('home')">←</button><h2>🔮 八字排盘</h2></div>
+  <div class="section">
+    <div class="card">
+      <div class="form-row"><label>出生年份</label><input type="number" id="bazi-year" placeholder="如 1990" min="1900" max="2100"></div>
+      <div class="form-row"><label>月份</label><input type="number" id="bazi-month" placeholder="1-12" min="1" max="12"></div>
+      <div class="form-row"><label>日期</label><input type="number" id="bazi-day" placeholder="1-31" min="1" max="31"></div>
+      <div class="form-row"><label>时辰</label>
+        <select id="bazi-hour">
+          <option value="0">子时 (23-1)</option><option value="1">丑时 (1-3)</option>
+          <option value="3">寅时 (3-5)</option><option value="5">卯时 (5-7)</option>
+          <option value="7">辰时 (7-9)</option><option value="9">巳时 (9-11)</option>
+          <option value="11">午时 (11-13)</option><option value="13">未时 (13-15)</option>
+          <option value="15">申时 (15-17)</option><option value="17">酉时 (17-19)</option>
+          <option value="19">戌时 (19-21)</option><option value="21">亥时 (21-23)</option>
+        </select>
       </div>
-
-      <!-- Social Login -->
-      <div class="social-login">
-        <button class="social-btn wechat" onclick="doSocialLogin('wechat')">
-          <span class="social-icon">💬</span> 微信登录
-        </button>
-        <div class="social-row">
-          <button class="social-btn qq" onclick="doSocialLogin('qq')">
-            <span class="social-icon">🐧</span> QQ
-          </button>
-          <button class="social-btn apple" onclick="doSocialLogin('apple')">
-            <span class="social-icon">🍎</span> Apple
-          </button>
+      <div class="form-row"><label>性别</label>
+        <div class="gender-group">
+          <button class="gender-btn active" onclick="setGender('bazi',1,this)">男</button>
+          <button class="gender-btn" onclick="setGender('bazi',0,this)">女</button>
         </div>
       </div>
+      <button class="btn-primary" style="width:100%;margin-top:8px" onclick="doBazi()">开始排盘</button>
+    </div>
+    <div id="bazi-result" style="margin-top:16px"></div>
+  </div>
+</div>
 
-      <div class="auth-divider"><span>或使用账号登录</span></div>
+<!-- Zhouyi -->
+<div class="page" id="page-zhouyi">
+  <div class="page-header"><button class="back-btn" onclick="goPage('home')">←</button><h2>☯ 周易占卜</h2></div>
+  <div class="section">
+    <div class="card" style="text-align:center;padding:30px 20px">
+      <div style="font-size:48px;margin-bottom:12px">☯</div>
+      <p style="color:var(--text-secondary);margin-bottom:20px;font-size:14px">心中默念所问之事<br>然后点击起卦</p>
+      <button class="btn-primary" id="zhouyi-btn" style="width:100%" onclick="doZhouyi()">☯ 起卦</button>
+    </div>
+    <div id="zhouyi-result" style="margin-top:16px"></div>
+  </div>
+</div>
 
-      <!-- Tab Switch: 用户名 / 手机号 / 邮箱 -->
+<!-- Tarot -->
+<div class="page" id="page-tarot">
+  <div class="page-header"><button class="back-btn" onclick="goPage('home')">←</button><h2>🃏 塔罗牌</h2></div>
+  <div class="section">
+    <div class="card">
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:10px">选择牌阵</div>
+      <div id="tarot-spreads" class="spread-group"></div>
+      <button class="btn-primary" id="tarot-btn" style="width:100%;margin-top:12px" onclick="doTarot()">🃏 抽牌（1张）</button>
+    </div>
+    <div id="tarot-result" style="margin-top:16px"></div>
+  </div>
+</div>
+
+<!-- Zodiac -->
+<div class="page" id="page-zodiac">
+  <div class="page-header"><button class="back-btn" onclick="goPage('home')">←</button><h2>♈ 星座运势</h2></div>
+  <div class="section">
+    <div id="zodiac-grid" class="zodiac-grid"></div>
+    <div id="zodiac-info" style="margin-top:14px"></div>
+    <button class="btn-primary" style="width:100%;margin-top:14px" onclick="doZodiac()">查看今日运势</button>
+    <div id="zodiac-result" style="margin-top:16px"></div>
+  </div>
+</div>
+
+<!-- Name -->
+<div class="page" id="page-name">
+  <div class="page-header"><button class="back-btn" onclick="goPage('home')">←</button><h2>✍ 姓名测算</h2></div>
+  <div class="section">
+    <div class="card">
+      <div class="form-row"><label>姓名</label><input type="text" id="name-input" placeholder="请输入姓名" maxlength="6"></div>
+      <button class="btn-primary" style="width:100%;margin-top:8px" onclick="doName()">开始测算</button>
+    </div>
+    <div id="name-result" style="margin-top:16px"></div>
+  </div>
+</div>
+
+<!-- Fengshui -->
+<div class="page" id="page-fengshui">
+  <div class="page-header"><button class="back-btn" onclick="goPage('home')">←</button><h2>🧭 风水罗盘</h2></div>
+  <div class="section">
+    <div class="card">
+      <div class="form-row"><label>出生年份</label><input type="number" id="fs-year" placeholder="如 1990" min="1900" max="2100"></div>
+      <div class="form-row"><label>性别</label>
+        <div class="gender-group">
+          <button class="gender-btn active" onclick="setGender('fs',1,this)">男</button>
+          <button class="gender-btn" onclick="setGender('fs',0,this)">女</button>
+        </div>
+      </div>
+      <button class="btn-primary" style="width:100%;margin-top:8px" onclick="doFengShui()">开始测算</button>
+    </div>
+    <div id="fs-result" style="margin-top:16px"></div>
+  </div>
+</div>
+
+<!-- Numerology -->
+<div class="page" id="page-numerology">
+  <div class="page-header"><button class="back-btn" onclick="goPage('home')">←</button><h2>🔢 数字能量</h2></div>
+  <div class="section">
+    <div class="card">
+      <div class="form-row"><label>出生日期</label><input type="date" id="num-birth"></div>
+      <button class="btn-primary" style="width:100%;margin-top:8px" onclick="doLifePath()">计算生命灵数</button>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <div class="form-row"><label>手机/号码</label><input type="text" id="num-phone" placeholder="输入号码" inputmode="numeric"></div>
+      <button class="btn-primary" style="width:100%;margin-top:8px" onclick="doNumberAnalysis()">分析号码能量</button>
+    </div>
+    <div id="num-result" style="margin-top:16px"></div>
+  </div>
+</div>
+
+<!-- Knowledge -->
+<div class="page" id="page-knowledge">
+  <div class="page-header"><button class="back-btn" onclick="goPage('home')">←</button><h2>📚 命理知识库</h2></div>
+  <div class="section">
+    <div id="knowledge-list"></div>
+  </div>
+</div>
+
+<!-- Knowledge Detail -->
+<div class="page" id="page-knowledge-detail">
+  <div class="page-header"><button class="back-btn" id="knowledge-back-btn" onclick="goPage('knowledge')">←</button><h2 id="knowledge-detail-title"></h2></div>
+  <div class="section"><div id="knowledge-detail-content"></div></div>
+</div>
+
+<!-- Profile -->
+<div class="page" id="page-profile">
+  <div class="page-header"><button class="back-btn" onclick="goPage('home')">←</button><h2>我的</h2></div>
+  <div class="section">
+    <div class="card" id="profileCard"></div>
+    <div id="historyList" style="margin-top:16px"></div>
+  </div>
+</div>
+
+<!-- Auth Overlay -->
+<div class="auth-overlay" id="authOverlay" onclick="closeAuthIfBg(event)">
+  <div class="auth-modal">
+    <div class="auth-header">
+      <span class="auth-title" id="authTitle">登录</span>
+      <button class="auth-close" onclick="closeAuth()">✕</button>
+    </div>
+
+    <!-- Login Panel -->
+    <div id="loginPanel">
       <div class="auth-tabs">
-        <div class="auth-tab active" onclick="switchLoginTab('username')">用户名</div>
-        <div class="auth-tab" onclick="switchLoginTab('phone')">手机号</div>
-        <div class="auth-tab" onclick="switchLoginTab('email')">邮箱</div>
+        <button class="auth-tab active" onclick="switchLoginTab('username')">用户名</button>
+        <button class="auth-tab" onclick="switchLoginTab('phone')">手机号</button>
+        <button class="auth-tab" onclick="switchLoginTab('email')">邮箱</button>
       </div>
-
-      <!-- Username Login -->
       <div class="auth-tab-content active" id="loginTab-username">
-        <div class="form-group"><label class="form-label">用户名</label><input class="form-input" id="loginUser" placeholder="请输入用户名" autocomplete="username"></div>
-        <div class="form-group"><label class="form-label">密码</label><input class="form-input" id="loginPass" type="password" placeholder="请输入密码" autocomplete="current-password"></div>
+        <input class="auth-input" id="loginUser" placeholder="用户名">
+        <input class="auth-input" id="loginPass" type="password" placeholder="密码">
       </div>
-
-      <!-- Phone Login -->
       <div class="auth-tab-content" id="loginTab-phone">
-        <div class="form-group"><label class="form-label">手机号</label><input class="form-input" id="loginPhone" placeholder="请输入手机号" inputmode="tel" maxlength="11"></div>
-        <div class="form-group"><label class="form-label">密码</label><input class="form-input" id="loginPhonePass" type="password" placeholder="请输入密码" autocomplete="current-password"></div>
+        <input class="auth-input" id="loginPhone" placeholder="手机号" inputmode="tel">
+        <input class="auth-input" id="loginPhonePass" type="password" placeholder="密码">
       </div>
-
-      <!-- Email Login -->
       <div class="auth-tab-content" id="loginTab-email">
-        <div class="form-group"><label class="form-label">邮箱</label><input class="form-input" id="loginEmail" placeholder="请输入邮箱" inputmode="email"></div>
-        <div class="form-group"><label class="form-label">密码</label><input class="form-input" id="loginEmailPass" type="password" placeholder="请输入密码" autocomplete="current-password"></div>
+        <input class="auth-input" id="loginEmail" placeholder="邮箱">
+        <input class="auth-input" id="loginEmailPass" type="password" placeholder="密码">
       </div>
-
       <div class="auth-error" id="loginError"></div>
-      <button class="btn-primary" onclick="doLogin()">登 录</button>
-
-      <div class="auth-switch">
-        还没有账号？<a href="javascript:void(0)" onclick="showRegister()">立即注册</a>
-        &nbsp;|&nbsp;
-        <a href="javascript:void(0)" onclick="doGuestLogin()">游客体验</a>
-      </div>
+      <button class="btn-primary" style="width:100%;margin-top:4px" onclick="doLogin()">登录</button>
+      <div class="auth-switch">还没有账号？<a href="javascript:void(0)" onclick="showRegister()">立即注册</a></div>
     </div>
 
     <!-- Register Panel -->
-    <div class="auth-panel" id="registerPanel" style="display:none">
-      <div class="auth-header">
-        <div class="auth-icon">✨</div>
-        <h2 class="auth-title">注册新账号</h2>
-        <p class="auth-desc">创建账号，开启你的命理之旅</p>
-      </div>
-
-      <!-- Social Register -->
-      <div class="social-login">
-        <button class="social-btn wechat" onclick="doSocialLogin('wechat')">
-          <span class="social-icon">💬</span> 微信一键注册
-        </button>
-        <div class="social-row">
-          <button class="social-btn qq" onclick="doSocialLogin('qq')">
-            <span class="social-icon">🐧</span> QQ
-          </button>
-          <button class="social-btn apple" onclick="doSocialLogin('apple')">
-            <span class="social-icon">🍎</span> Apple
-          </button>
-        </div>
-      </div>
-
-      <div class="auth-divider"><span>或使用账号注册</span></div>
-
-      <!-- Tab Switch: 用户名 / 手机号 / 邮箱 -->
+    <div id="registerPanel" style="display:none">
       <div class="auth-tabs">
-        <div class="auth-tab active" onclick="switchRegTab('username')">用户名</div>
-        <div class="auth-tab" onclick="switchRegTab('phone')">手机号</div>
-        <div class="auth-tab" onclick="switchRegTab('email')">邮箱</div>
+        <button class="auth-tab active" onclick="switchRegTab('username')">用户名</button>
+        <button class="auth-tab" onclick="switchRegTab('phone')">手机号</button>
+        <button class="auth-tab" onclick="switchRegTab('email')">邮箱</button>
       </div>
-
-      <!-- Username Register -->
       <div class="auth-tab-content active" id="regTab-username">
-        <div class="form-group"><label class="form-label">用户名</label><input class="form-input" id="regUser" placeholder="2-16个字符" autocomplete="username"></div>
-        <div class="form-group"><label class="form-label">昵称</label><input class="form-input" id="regNick" placeholder="显示名称（选填）"></div>
-        <div class="form-group"><label class="form-label">密码</label><input class="form-input" id="regPass" type="password" placeholder="至少6位" autocomplete="new-password"></div>
-        <div class="form-group"><label class="form-label">确认密码</label><input class="form-input" id="regPass2" type="password" placeholder="再次输入密码" autocomplete="new-password"></div>
+        <input class="auth-input" id="regUser" placeholder="用户名（2-16字符）">
+        <input class="auth-input" id="regNick" placeholder="昵称（选填）">
+        <input class="auth-input" id="regPass" type="password" placeholder="密码（至少6位）">
+        <input class="auth-input" id="regPass2" type="password" placeholder="确认密码">
       </div>
-
-      <!-- Phone Register -->
       <div class="auth-tab-content" id="regTab-phone">
-        <div class="form-group"><label class="form-label">手机号</label><input class="form-input" id="regPhone" placeholder="请输入手机号" inputmode="tel" maxlength="11"></div>
-        <div class="form-group"><label class="form-label">验证码</label>
-          <div class="code-row">
-            <input class="form-input code-input" id="regPhoneCode" placeholder="6位验证码" inputmode="numeric" maxlength="6">
-            <button class="code-btn" id="phoneCodeBtn" onclick="sendCode('phone')">获取验证码</button>
-          </div>
+        <div class="auth-row">
+          <input class="auth-input flex1" id="regPhone" placeholder="手机号" inputmode="tel">
+          <button class="btn-code" id="phoneCodeBtn" onclick="sendCode('phone')">获取验证码</button>
         </div>
-        <div class="form-group"><label class="form-label">设置密码</label><input class="form-input" id="regPhonePass" type="password" placeholder="至少6位" autocomplete="new-password"></div>
+        <input class="auth-input" id="regPhoneCode" placeholder="验证码" inputmode="numeric" maxlength="6">
+        <input class="auth-input" id="regPhonePass" type="password" placeholder="设置密码（至少6位）">
       </div>
-
-      <!-- Email Register -->
       <div class="auth-tab-content" id="regTab-email">
-        <div class="form-group"><label class="form-label">邮箱</label><input class="form-input" id="regEmail" placeholder="请输入邮箱" inputmode="email"></div>
-        <div class="form-group"><label class="form-label">验证码</label>
-          <div class="code-row">
-            <input class="form-input code-input" id="regEmailCode" placeholder="6位验证码" inputmode="numeric" maxlength="6">
-            <button class="code-btn" id="emailCodeBtn" onclick="sendCode('email')">获取验证码</button>
-          </div>
+        <div class="auth-row">
+          <input class="auth-input flex1" id="regEmail" placeholder="邮箱">
+          <button class="btn-code" id="emailCodeBtn" onclick="sendCode('email')">获取验证码</button>
         </div>
-        <div class="form-group"><label class="form-label">设置密码</label><input class="form-input" id="regEmailPass" type="password" placeholder="至少6位" autocomplete="new-password"></div>
+        <input class="auth-input" id="regEmailCode" placeholder="验证码" inputmode="numeric" maxlength="6">
+        <input class="auth-input" id="regEmailPass" type="password" placeholder="设置密码（至少6位）">
       </div>
-
       <div class="auth-error" id="regError"></div>
-      <button class="btn-primary" onclick="doRegister()">注 册</button>
+      <button class="btn-primary" style="width:100%;margin-top:4px" onclick="doRegister()">注册</button>
       <div class="auth-switch">已有账号？<a href="javascript:void(0)" onclick="showLogin()">去登录</a></div>
     </div>
 
+    <!-- Social Login -->
+    <div class="auth-divider"><span>其他方式</span></div>
+    <div class="social-group">
+      <button class="social-btn wechat" onclick="doSocialLogin('wechat')"><span class="social-icon">💬</span> 微信</button>
+      <button class="social-btn qq" onclick="doSocialLogin('qq')"><span class="social-icon">🐧</span> QQ</button>
+      <button class="social-btn apple" onclick="doSocialLogin('apple')"><span class="social-icon">🍎</span> Apple</button>
+    </div>
+    <button class="btn-guest" onclick="doGuestLogin()">游客模式</button>
   </div>
 </div>
 
-<!-- Floating Back-to-Top -->
-<button class="fab-top" id="fabTop" onclick="scrollPageTop()">↑</button>
+<!-- FAB -->
+<div class="fab" id="fabTop" onclick="scrollPageTop()">↑</div>
 
-<!-- Bottom Tab Bar -->
+<!-- Bottom Bar -->
 <nav class="bottom-bar" id="bottomBar">
   <div class="tab-item active" data-page="home">
     <span class="tab-icon">🏠</span><span class="tab-label">首页</span>
@@ -426,11 +334,11 @@
   </div>
 </nav>
 
-<script src="js/supabase-config.js?v=11"></script>
-<script src="js/cloud.js?v=11"></script>
-<script src="js/knowledge.js?v=10"></script>
-<script src="js/utils.js?v=10"></script>
-<script src="js/app.js?v=10"></script>
+<script src="js/supabase-config.js?v=20"></script>
+<script src="js/cloud.js?v=20"></script>
+<script src="js/knowledge.js?v=20"></script>
+<script src="js/utils.js?v=20"></script>
+<script src="js/app.js?v=20"></script>
 <script>
 Cloud.init();
 Cloud.handleOAuthCallback();
