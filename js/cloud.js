@@ -490,12 +490,34 @@ var Cloud = (function() {
   // ===== 错误处理 =====
   function cloudErr(e) {
     var msg = '';
+    var code = '';
     if (typeof e === 'string') return e;
+    if (e && e.error_code) code = e.error_code;
     if (e && e.message) msg = e.message;
     else if (e && e.msg) msg = e.msg;
     else if (e && e.error_description) msg = e.error_description;
     else if (e && e.error) msg = typeof e.error === 'string' ? e.error : e.error.message || '';
     else msg = '操作失败';
+
+    // 按 error_code 翻译
+    var codeMap = {
+      'over_email_send_rate_limit': '发送邮件过于频繁，请稍后再试',
+      'over_request_rate_limit': '请求过于频繁，请稍后再试',
+      'invalid_credentials': '用户名或密码错误',
+      'user_not_found': '用户不存在',
+      'email_exists': '该邮箱已注册',
+      'phone_exists': '该手机号已注册',
+      'invalid_email': '邮箱格式不正确',
+      'invalid_phone': '手机号格式不正确',
+      'weak_password': '密码强度不够，请设置更复杂的密码',
+      'signup_disabled': '注册功能已关闭',
+      'provider_disabled': '该登录方式未启用',
+      'invalid_oauth_state': '第三方登录失败，请重试',
+      'session_not_found': '登录已过期，请重新登录'
+    };
+    if (code && codeMap[code]) return codeMap[code];
+
+    // 按 msg 文本翻译
     var map = {
       'User already registered': '该账号已注册',
       'Invalid login credentials': '用户名或密码错误',
@@ -503,11 +525,34 @@ var Cloud = (function() {
       'Phone not confirmed': '请先验证手机号',
       'Rate limit exceeded': '操作过于频繁，请稍后再试',
       'Invalid email': '邮箱格式不正确',
+      'Invalid phone': '手机号格式不正确',
       'Password should be at least 6 characters': '密码至少6位',
+      'Password should be at least 6 characters.': '密码至少6位',
       'Token has expired or is invalid': '验证码已过期',
       'Invalid OTP': '验证码错误',
       'User not found': '用户不存在',
-      'Network request failed': '网络连接失败，请检查网络'
+      'Network request failed': '网络连接失败，请检查网络',
+      'Email rate limit exceeded': '发送邮件过于频繁，请稍后再试',
+      'SMS rate limit exceeded': '发送短信过于频繁，请稍后再试',
+      'To signup, please provide your email': '请输入邮箱地址',
+      'To signup, please provide your phone': '请输入手机号',
+      'Password is too weak': '密码强度不够，请设置更复杂的密码',
+      'Unable to validate email address': '无法验证邮箱地址',
+      'Signup requires a valid password': '请输入有效密码',
+      'A user with this email already exists': '该邮箱已注册',
+      'A user with this phone already exists': '该手机号已注册',
+      'No user found with this email': '该邮箱未注册',
+      'No user found with this phone': '该手机号未注册',
+      'Email link is invalid or has expired': '邮箱验证链接已失效',
+      'Phone verification code has expired': '手机验证码已过期',
+      'Phone verification code is invalid': '手机验证码错误',
+      'Could not parse JWT access token': '登录已过期，请重新登录',
+      'Token expired': '登录已过期，请重新登录',
+      'Failed to fetch': '网络连接失败，请检查网络',
+      'Failed to send verification email': '验证邮件发送失败，请稍后重试',
+      'Signups not allowed for this instance': '当前不允许注册',
+      'For security purposes, you can only request this once every 60 seconds': '操作过于频繁，请60秒后再试',
+      'The password used is too weak. It should be at least 6 characters long.': '密码至少6位'
     };
     return map[msg] || msg;
   }
