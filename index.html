@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0a0a1a">
+  <meta name="description" content="天机阁 - 综合命理测算平台">
+  <title>天机阁</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
+</head>
+<body>
+
+<!-- Top Nav -->
+<nav class="nav" id="topNav">
+  <div class="nav-logo">天机阁</div>
+  <div class="nav-links" id="navLinks">
+    <a class="nav-link active" href="#home">首页</a>
+    <a class="nav-link" href="#daily">运势</a>
+    <a class="nav-link" href="#bazi">八字</a>
+    <a class="nav-link" href="#zhouyi">周易</a>
+    <a class="nav-link" href="#tarot">塔罗</a>
+    <a class="nav-link" href="#zodiac">星座</a>
+    <a class="nav-link" href="#name">姓名</a>
+    <a class="nav-link" href="#fengshui">风水</a>
+    <a class="nav-link" href="#numerology">数字</a>
+  </div>
+  <div class="nav-user" id="navUser" onclick="handleUserClick()">
+    <div class="user-avatar" id="navAvatar">👤</div>
+  </div>
+</nav>
+
+<!-- Auth Modal -->
+<div class="auth-overlay" id="authOverlay" onclick="closeAuthIfBg(event)">
+  <div class="auth-modal" id="authModal">
+    <button class="auth-close" onclick="closeAuth()">✕</button>
+    <!-- Login Form -->
+    <div class="auth-panel" id="loginPanel">
+      <div class="auth-header">
+        <div class="auth-icon">🔮</div>
+        <h2 class="auth-title">登录天机阁</h2>
+        <p class="auth-desc">登录后保存你的测算记录</p>
+      </div>
+      <div class="form-group"><label class="form-label">用户名</label><input class="form-input" id="loginUser" placeholder="请输入用户名" autocomplete="username"></div>
+      <div class="form-group"><label class="form-label">密码</label><input class="form-input" id="loginPass" type="password" placeholder="请输入密码" autocomplete="current-password"></div>
+      <div class="auth-error" id="loginError"></div>
+      <button class="btn-primary" onclick="doLogin()">登 录</button>
+      <div class="auth-switch">还没有账号？<a href="javascript:void(0)" onclick="showRegister()">立即注册</a></div>
+    </div>
+    <!-- Register Form -->
+    <div class="auth-panel" id="registerPanel" style="display:none">
+      <div class="auth-header">
+        <div class="auth-icon">✨</div>
+        <h2 class="auth-title">注册新账号</h2>
+        <p class="auth-desc">创建账号，开启你的命理之旅</p>
+      </div>
+      <div class="form-group"><label class="form-label">用户名</label><input class="form-input" id="regUser" placeholder="2-16个字符" autocomplete="username"></div>
+      <div class="form-group"><label class="form-label">昵称</label><input class="form-input" id="regNick" placeholder="显示名称（选填）"></div>
+      <div class="form-group"><label class="form-label">密码</label><input class="form-input" id="regPass" type="password" placeholder="至少6位" autocomplete="new-password"></div>
+      <div class="form-group"><label class="form-label">确认密码</label><input class="form-input" id="regPass2" type="password" placeholder="再次输入密码" autocomplete="new-password"></div>
+      <div class="auth-error" id="regError"></div>
+      <button class="btn-primary" onclick="doRegister()">注 册</button>
+      <div class="auth-switch">已有账号？<a href="javascript:void(0)" onclick="showLogin()">去登录</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- Hero -->
+<section class="hero" id="home">
+  <div class="hero-content">
+    <div class="hero-badge">✨ 综合命理测算平台</div>
+    <h1 class="hero-title">天机阁</h1>
+    <p class="hero-sub">知命不惧 · 日日自新</p>
+    <button class="hero-cta" onclick="scrollTo('#daily')">
+      🔮 探索你的命运
+    </button>
+  </div>
+</section>
+
+<!-- Module Grid -->
+<section class="section" id="modules">
+  <div class="section-header">
+    <div class="section-icon">🔮</div>
+    <h2 class="section-title">命理服务</h2>
+    <p class="section-desc">选择你感兴趣的测算项目</p>
+  </div>
+  <div class="module-grid">
+    <a class="module-card" href="#bazi">
+      <div class="module-icon" style="background:rgba(108,92,231,0.12)">🔮</div>
+      <div class="module-name">八字命理</div>
+      <div class="module-desc">四柱排盘 · 十神 · 五行</div>
+    </a>
+    <a class="module-card" href="#zhouyi">
+      <div class="module-icon" style="background:rgba(253,121,168,0.12)">☯</div>
+      <div class="module-name">周易占卜</div>
+      <div class="module-desc">六十四卦 · 爻辞 · 变卦</div>
+    </a>
+    <a class="module-card" href="#tarot">
+      <div class="module-icon" style="background:rgba(225,112,85,0.12)">🃏</div>
+      <div class="module-name">塔罗牌</div>
+      <div class="module-desc">大阿卡纳 · 牌阵 · 解读</div>
+    </a>
+    <a class="module-card" href="#zodiac">
+      <div class="module-icon" style="background:rgba(0,184,148,0.12)">♈</div>
+      <div class="module-name">西方星座</div>
+      <div class="module-desc">十二星座 · 运势 · 性格</div>
+    </a>
+    <a class="module-card" href="#name">
+      <div class="module-icon" style="background:rgba(253,203,110,0.12)">✍</div>
+      <div class="module-name">姓名测算</div>
+      <div class="module-desc">五格剖象 · 三才 · 评分</div>
+    </a>
+    <a class="module-card" href="#fengshui">
+      <div class="module-icon" style="background:rgba(85,163,164,0.12)">🧭</div>
+      <div class="module-name">风水罗盘</div>
+      <div class="module-desc">八宅风水 · 吉凶 · 布局</div>
+    </a>
+    <a class="module-card" href="#numerology">
+      <div class="module-icon" style="background:rgba(99,110,114,0.12)">🔢</div>
+      <div class="module-name">数字能量</div>
+      <div class="module-desc">生命灵数 · 号码分析</div>
+    </a>
+    <a class="module-card" href="#daily">
+      <div class="module-icon" style="background:rgba(201,169,110,0.12)">📅</div>
+      <div class="module-name">每日运势</div>
+      <div class="module-desc">综合运势 · 宜忌 · 指南</div>
+    </a>
+  </div>
+</section>
+
+<!-- Daily Fortune -->
+<section class="section" id="daily">
+  <div class="section-header">
+    <div class="section-icon">📅</div>
+    <h2 class="section-title">每日运势</h2>
+    <p class="section-desc" id="daily-date"></p>
+  </div>
+  <div class="fortune-grid" id="daily-result"></div>
+</section>
+
+<!-- Bazi -->
+<section class="section" id="bazi">
+  <div class="section-header">
+    <div class="section-icon">🔮</div>
+    <h2 class="section-title">八字命理</h2>
+    <p class="section-desc">输入出生信息，获取四柱八字排盘</p>
+  </div>
+  <div class="card form-card">
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">出生年份</label><input class="form-input" type="number" id="bazi-year" placeholder="1990" value="1990" inputmode="numeric"></div>
+      <div class="form-group"><label class="form-label">月份</label><input class="form-input" type="number" id="bazi-month" placeholder="1" value="1" min="1" max="12" inputmode="numeric"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">日期</label><input class="form-input" type="number" id="bazi-day" placeholder="1" value="1" min="1" max="31" inputmode="numeric"></div>
+      <div class="form-group"><label class="form-label">时辰</label>
+        <select class="form-input" id="bazi-hour">
+          <option value="0">子时 23-01</option><option value="1">丑时 01-03</option>
+          <option value="3">寅时 03-05</option><option value="5">卯时 05-07</option>
+          <option value="7">辰时 07-09</option><option value="9">巳时 09-11</option>
+          <option value="11">午时 11-13</option><option value="13">未时 13-15</option>
+          <option value="15">申时 15-17</option><option value="17">酉时 17-19</option>
+          <option value="19">戌时 19-21</option><option value="21">亥时 21-23</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">性别</label>
+      <div class="gender-btns">
+        <button class="gender-btn active" onclick="setGender('bazi',1,this)">男</button>
+        <button class="gender-btn" onclick="setGender('bazi',2,this)">女</button>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="doBazi()">🔮 开始排盘</button>
+  </div>
+  <div id="bazi-result"></div>
+</section>
+
+<!-- Zhouyi -->
+<section class="section" id="zhouyi">
+  <div class="section-header">
+    <div class="section-icon">☯</div>
+    <h2 class="section-title">周易占卜</h2>
+    <p class="section-desc">心诚则灵，心中默念所问之事</p>
+  </div>
+  <div class="form-card">
+    <div class="card">
+      <p style="color:var(--text-secondary);margin-bottom:20px;font-size:15px">心中默念所问之事，然后点击起卦</p>
+      <button class="btn-primary" id="zhouyi-btn" onclick="doZhouyi()">☯ 开始起卦</button>
+    </div>
+  </div>
+  <div id="zhouyi-result"></div>
+</section>
+
+<!-- Tarot -->
+<section class="section" id="tarot">
+  <div class="section-header">
+    <div class="section-icon">🃏</div>
+    <h2 class="section-title">塔罗牌占卜</h2>
+    <p class="section-desc">选择牌阵，聆听命运的低语</p>
+  </div>
+  <div class="form-card">
+    <div class="card">
+      <label class="form-label">选择牌阵</label>
+      <div class="spread-options" id="tarot-spreads"></div>
+      <button class="btn-primary" id="tarot-btn" onclick="doTarot()">🃏 抽牌占卜</button>
+    </div>
+  </div>
+  <div id="tarot-result"></div>
+</section>
+
+<!-- Zodiac -->
+<section class="section" id="zodiac">
+  <div class="section-header">
+    <div class="section-icon">♈</div>
+    <h2 class="section-title">西方星座</h2>
+    <p class="section-desc">选择星座，查看每日运势</p>
+  </div>
+  <div class="form-card">
+    <div class="card">
+      <div class="zodiac-grid" id="zodiac-grid"></div>
+      <div id="zodiac-info"></div>
+      <button class="btn-primary" onclick="doZodiac()">✨ 查看今日运势</button>
+    </div>
+  </div>
+  <div id="zodiac-result"></div>
+</section>
+
+<!-- Name -->
+<section class="section" id="name">
+  <div class="section-header">
+    <div class="section-icon">✍</div>
+    <h2 class="section-title">姓名测算</h2>
+    <p class="section-desc">五格剖象法，分析姓名数理吉凶</p>
+  </div>
+  <div class="form-card">
+    <div class="card">
+      <div class="form-group"><label class="form-label">请输入姓名</label><input class="form-input" id="name-input" placeholder="如：张三"></div>
+      <button class="btn-primary" onclick="doName()">✍ 开始测算</button>
+    </div>
+  </div>
+  <div id="name-result"></div>
+</section>
+
+<!-- Fengshui -->
+<section class="section" id="fengshui">
+  <div class="section-header">
+    <div class="section-icon">🧭</div>
+    <h2 class="section-title">风水罗盘</h2>
+    <p class="section-desc">八宅风水，找出吉凶方位</p>
+  </div>
+  <div class="form-card">
+    <div class="card">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">出生年份</label><input class="form-input" type="number" id="fs-year" placeholder="1990" value="1990" inputmode="numeric"></div>
+        <div class="form-group">
+          <label class="form-label">性别</label>
+          <div class="gender-btns">
+            <button class="gender-btn active" onclick="setGender('fs',1,this)">男</button>
+            <button class="gender-btn" onclick="setGender('fs',2,this)">女</button>
+          </div>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="doFengShui()">🧭 开始测算</button>
+    </div>
+  </div>
+  <div id="fs-result"></div>
+</section>
+
+<!-- Numerology -->
+<section class="section" id="numerology">
+  <div class="section-header">
+    <div class="section-icon">🔢</div>
+    <h2 class="section-title">数字能量</h2>
+    <p class="section-desc">生命灵数与号码分析</p>
+  </div>
+  <div class="form-card">
+    <div class="card">
+      <div class="form-group"><label class="form-label">出生日期</label><input class="form-input" type="date" id="num-birth" value="1990-01-01"></div>
+      <button class="btn-primary" onclick="doLifePath()">🔢 计算生命灵数</button>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <div class="form-group"><label class="form-label">手机号 / 车牌号</label><input class="form-input" id="num-phone" placeholder="输入号码" inputmode="numeric"></div>
+      <button class="btn-primary" onclick="doNumberAnalysis()">📊 分析号码能量</button>
+    </div>
+  </div>
+  <div id="num-result"></div>
+</section>
+
+<!-- Profile Section -->
+<section class="section" id="profile" style="display:none">
+  <div class="section-header">
+    <div class="section-icon">👤</div>
+    <h2 class="section-title">个人中心</h2>
+  </div>
+  <div class="card" id="profileCard"></div>
+  <div id="historyList" style="margin-top:16px"></div>
+</section>
+
+<!-- Footer -->
+<footer class="footer" id="footer">
+  <p class="footer-text">天机阁 · 知命不惧 · 日日自新</p>
+  <p class="footer-disclaimer">仅供娱乐参考，不构成任何建议</p>
+</footer>
+
+<!-- Floating Back-to-Top -->
+<button class="fab-top" id="fabTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<!-- Bottom Tab Bar (mobile) -->
+<nav class="bottom-bar" id="bottomBar">
+  <a class="tab-item active" data-target="#home" onclick="tabGo(this)">
+    <span class="tab-icon">🏠</span><span class="tab-label">首页</span>
+  </a>
+  <a class="tab-item" data-target="#daily" onclick="tabGo(this)">
+    <span class="tab-icon">📅</span><span class="tab-label">运势</span>
+  </a>
+  <a class="tab-item" data-target="#bazi" onclick="tabGo(this)">
+    <span class="tab-icon">🔮</span><span class="tab-label">八字</span>
+  </a>
+  <a class="tab-item" data-target="#tarot" onclick="tabGo(this)">
+    <span class="tab-icon">🃏</span><span class="tab-label">塔罗</span>
+  </a>
+  <a class="tab-item" data-target="#zodiac" onclick="tabGo(this)">
+    <span class="tab-icon">♈</span><span class="tab-label">星座</span>
+  </a>
+</nav>
+
+<script src="js/utils.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
