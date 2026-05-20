@@ -124,10 +124,11 @@ var Cloud = (function() {
     if (!username && user.email) {
       username = user.email.replace(/@tianji\.local$/, '');
     }
+    var nick = (profile && profile.nick) || meta.nick || meta.full_name || username || '用户';
     return {
       username: username || user.email || user.id || '',
       userId: user.id || '',
-      nick: (profile && profile.nick) || meta.nick || meta.full_name || username || '用户',
+      nick: nick,
       phone: user.phone || '',
       email: user.email || '',
       avatar: (profile && profile.avatar) || meta.avatar || '',
@@ -136,6 +137,26 @@ var Cloud = (function() {
       joined: user.created_at || new Date().toISOString(),
       history: []
     };
+  }
+
+  // ===== 确保 profile 存在，不存在则自动创建 =====
+  function ensureProfile(user) {
+    if (!user || !user.id) return Promise.resolve({});
+    return _restGet('user_profiles', '?select=*&id=eq.' + user.id)
+      .then(function(profiles) {
+        if (profiles && profiles.length > 0) return profiles[0];
+        // profile 不存在，自动创建
+        var meta = user.user_metadata || {};
+        var nick = meta.nick || meta.username || user.email || '用户';
+        return _restPost('user_profiles', { id: user.id, nick: nick }, true)
+          .then(function() { return { id: user.id, nick: nick, avatar: '', social_type: '', is_guest: false }; })
+          .catch(function() { return { id: user.id, nick: nick, avatar: '', social_type: '', is_guest: false }; });
+      })
+      .catch(function() {
+        var meta = user.user_metadata || {};
+        var nick = meta.nick || meta.username || user.email || '用户';
+        return { id: user.id, nick: nick, avatar: '', social_type: '', is_guest: false };
+      });
   }
 
   // ===== 注册 =====
@@ -194,13 +215,9 @@ var Cloud = (function() {
               map[username] = email;
               localStorage.setItem('tianji_email_map', JSON.stringify(map));
             } catch(e) {}
-            _restGet('user_profiles', '?select=*&id=eq.' + res.user.id)
-              .then(function(profiles) {
-                var profile = (profiles && profiles[0]) || {};
-                cb(null, sbToLocal(res.user, profile));
-              }).catch(function() {
-                cb(null, sbToLocal(res.user, {}));
-              });
+            ensureProfile(res.user).then(function(profile) {
+              cb(null, sbToLocal(res.user, profile));
+            });
           }).catch(function(e) { cb(cloudErr(e)); });
       } else {
         cb(null, localLogIn(username, password));
@@ -215,13 +232,9 @@ var Cloud = (function() {
           .then(function(res) {
             if (res.error) { cb(cloudErr(res.error)); return; }
             _saveSession(res.access_token, res.refresh_token);
-            _restGet('user_profiles', '?select=*&id=eq.' + res.user.id)
-              .then(function(profiles) {
-                var profile = (profiles && profiles[0]) || {};
-                cb(null, sbToLocal(res.user, profile));
-              }).catch(function() {
-                cb(null, sbToLocal(res.user, {}));
-              });
+            ensureProfile(res.user).then(function(profile) {
+              cb(null, sbToLocal(res.user, profile));
+            });
           }).catch(function(e) { cb(cloudErr(e)); });
       } else {
         cb(null, localLogInByContact('phone', phone, password));
@@ -236,13 +249,9 @@ var Cloud = (function() {
           .then(function(res) {
             if (res.error) { cb(cloudErr(res.error)); return; }
             _saveSession(res.access_token, res.refresh_token);
-            _restGet('user_profiles', '?select=*&id=eq.' + res.user.id)
-              .then(function(profiles) {
-                var profile = (profiles && profiles[0]) || {};
-                cb(null, sbToLocal(res.user, profile));
-              }).catch(function() {
-                cb(null, sbToLocal(res.user, {}));
-              });
+            ensureProfile(res.user).then(function(profile) {
+              cb(null, sbToLocal(res.user, profile));
+            });
           }).catch(function(e) { cb(cloudErr(e)); });
       } else {
         cb(null, localLogInByContact('email', email, password));
@@ -280,13 +289,9 @@ var Cloud = (function() {
           .then(function(res) {
             if (res.error) { cb(cloudErr(res.error)); return; }
             _saveSession(res.access_token, res.refresh_token);
-            _restGet('user_profiles', '?select=*&id=eq.' + res.user.id)
-              .then(function(profiles) {
-                var profile = (profiles && profiles[0]) || {};
-                cb(null, sbToLocal(res.user, profile));
-              }).catch(function() {
-                cb(null, sbToLocal(res.user, {}));
-              });
+            ensureProfile(res.user).then(function(profile) {
+              cb(null, sbToLocal(res.user, profile));
+            });
           }).catch(function(e) { cb(cloudErr(e)); });
       } else {
         var codes = localGetCodes();
@@ -345,13 +350,9 @@ var Cloud = (function() {
       sessionStorage.removeItem('tianji_oauth_pending');
       _authGet('/user').then(function(user) {
         if (!user || user.error) { if (cb) cb('获取用户信息失败', false); return; }
-        _restGet('user_profiles', '?select=*&id=eq.' + user.id)
-          .then(function(profiles) {
-            var profile = (profiles && profiles[0]) || {};
-            if (cb) cb(null, sbToLocal(user, profile));
-          }).catch(function() {
-            if (cb) cb(null, sbToLocal(user, {}));
-          });
+        ensureProfile(user).then(function(profile) {
+          if (cb) cb(null, sbToLocal(user, profile));
+        });
       }).catch(function() { if (cb) cb('登录失败', false); });
     } else {
       if (cb) cb(null, false);
@@ -423,13 +424,9 @@ var Cloud = (function() {
         if (!_accessToken) { cb(null, null); return; }
         _authGet('/user').then(function(user) {
           if (!user || user.error) { cb(null, null); return; }
-          _restGet('user_profiles', '?select=*&id=eq.' + user.id)
-            .then(function(profiles) {
-              var profile = (profiles && profiles[0]) || {};
-              cb(null, sbToLocal(user, profile));
-            }).catch(function() {
-              cb(null, sbToLocal(user, {}));
-            });
+          ensureProfile(user).then(function(profile) {
+            cb(null, sbToLocal(user, profile));
+          });
         }).catch(function() { cb(null, null); });
       } else {
         var s = localGetSession();
