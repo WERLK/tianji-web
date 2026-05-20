@@ -119,10 +119,15 @@ var Cloud = (function() {
   // ===== Supabase 用户 → 本地用户对象 =====
   function sbToLocal(user, profile) {
     var meta = (user && user.user_metadata) || {};
+    var username = meta.username || '';
+    // 如果没有 meta.username，从 email 中提取（去掉 @tianji.local）
+    if (!username && user.email) {
+      username = user.email.replace(/@tianji\.local$/, '');
+    }
     return {
-      username: user.email || meta.username || user.id || '',
+      username: username || user.email || user.id || '',
       userId: user.id || '',
-      nick: (profile && profile.nick) || meta.nick || meta.full_name || '用户',
+      nick: (profile && profile.nick) || meta.nick || meta.full_name || username || '用户',
       phone: user.phone || '',
       email: user.email || '',
       avatar: (profile && profile.avatar) || meta.avatar || '',
