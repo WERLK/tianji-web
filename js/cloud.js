@@ -409,28 +409,27 @@ var Cloud = (function() {
   function resetPassword(email, cb) {
     onReady(function() {
       if (!isCloud()) { cb('本地模式不支持密码重置'); return; }
-      // 1. 生成一次性 token
-      var token = 'rst_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 12);
-      var expires = Date.now() + 30 * 60 * 1000;
-      // 2. 查找用户 profile
+      // 1. 查找用户 profile
       _restGet('user_profiles', '?select=id,nick,email&email=eq.' + encodeURIComponent(email))
         .then(function(profiles) {
           if (!profiles || profiles.length === 0) {
-            // 尝试按 nick（用户名）查找
             var uname = email.split('@')[0];
             return _restGet('user_profiles', '?select=id,nick,email&nick=eq.' + encodeURIComponent(uname));
           }
-          return Promise.resolve(profiles);
+          return profiles;
         })
         .then(function(profiles) {
-          if (!profiles || profiles.length === 0) { cb('该邮箱未注册'); return Promise.reject('not_found'); }
+          if (!profiles || profiles.length === 0) { cb('该邮箱未注册'); return; }
           var p = profiles[0];
-          // 3. 存储 token
+          // 2. 生成一次性 token 并存储
+          var token = 'rst_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 12);
+          var expires = Date.now() + 30 * 60 * 1000;
           return _restPost('user_profiles', { id: p.id, reset_token: token, reset_expires: expires, email: email }, true)
-            .then(function() { return p; });
+            .then(function() { return token; });
         })
-        .then(function(p) {
-          // 4. 用 Resend 发邮件
+        .then(function(token) {
+          if (!token) return; // 前面已经 cb 过了
+          // 3. 用 Resend 发邮件
           var resetUrl = window.location.origin + window.location.pathname + '?reset=' + token;
           var resendKey = (typeof RESEND_KEY !== 'undefined') ? RESEND_KEY : '';
           var host = window.location.hostname;
@@ -457,14 +456,12 @@ var Cloud = (function() {
                 cb(null);
               })
               .catch(function() {
-                // Resend 失败，回退到 Supabase 内置邮件
                 return _authPost('/recover', { email: email }).then(function(r) {
                   if (_isAuthError(r)) { cb(cloudErr(r)); return; }
                   cb(null);
                 });
               });
           } else {
-            // 没有 Resend key，直接用 Supabase
             return _authPost('/recover', { email: email }).then(function(r) {
               if (_isAuthError(r)) { cb(cloudErr(r)); return; }
               cb(null);
