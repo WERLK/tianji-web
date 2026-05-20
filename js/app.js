@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (user) {
       state.currentUser = user;
       updateUI();
+      _startRealtime(user);
       showToast('欢迎，' + (user.nick || user.username) + '！');
     } else {
       restoreSession();
@@ -397,13 +398,36 @@ function doNumberAnalysis() {
       '</div></div></div>';
 }
 
+// ===== Realtime 实时同步 =====
+function _startRealtime(user) {
+  if (!user || !user.userId) return;
+  Cloud.startRealtime(user.userId, {
+    onHistoryChange: function(type, record, oldRecord) {
+      if (!state.currentUser) return;
+      var h = state.currentUser.history || [];
+      if (type === 'INSERT' && record) {
+        var exists = h.some(function(x) { return x.time === record.created_at; });
+        if (!exists) {
+          h.push({ type: record.type, detail: record.detail, time: record.created_at });
+          state.currentUser.history = h;
+        }
+      } else if (type === 'DELETE' && oldRecord) {
+        state.currentUser.history = h.filter(function(x) { return x.time !== oldRecord.created_at; });
+      } else if (type === 'UPDATE') {
+        Cloud.loadHistory(function() {});
+      }
+      if (state.currentPage === 'profile') renderProfile();
+    }
+  });
+}
+
 // ============================================
 // ============================================
 // AUTH MODULE (uses Cloud module)
 // ============================================
 function restoreSession(){
   Cloud.getCurrentUser(function(err, user) {
-    if (user) { state.currentUser = user; }
+    if (user) { state.currentUser = user; _startRealtime(user); }
     updateUI();
   });
 }
@@ -620,6 +644,7 @@ function doLogin() {
 }
 
 function doLogout(){
+  Cloud.stopRealtime();
   Cloud.logOut(function() {
     state.currentUser = null; updateUI(); goPage('home');
     localStorage.removeItem('tianji_remember');

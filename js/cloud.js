@@ -723,6 +723,74 @@ var Cloud = (function() {
     localStorage.setItem('tianji_users', JSON.stringify(users));
   }
 
+  // ===== Realtime 实时同步（WebSocket） =====
+  var _rtWs = null;
+  var _rtRef = 0;
+  var _rtHeartbeat = null;
+  var _rtUserId = '';
+  var _rtCallbacks = { onHistoryChange: null };
+
+  function _rtSend(topic, event, payload) {
+    if (!_rtWs || _rtWs.readyState !== 1) return;
+    _rtWs.send(JSON.stringify({ topic: topic, event: event, payload: payload, ref: String(++_rtRef) }));
+  }
+
+  function _rtJoin(table, userId) {
+    var channel = 'realtime:public:' + table;
+    _rtSend(channel, 'phx_join', {
+      config: {
+        broadcast: { self: false },
+        presence: { key: '' },
+        private: false
+      },
+      postgres_changes: [{
+        event: '*',
+        schema: 'public',
+        table: table,
+        filter: 'user_id=eq.' + userId
+      }]
+    });
+  }
+
+  function _rtConnect(userId) {
+    if (!isCloud() || !userId || _rtWs) return;
+    _rtUserId = userId;
+    try {
+      var wsUrl = _url.replace(/^https/, 'wss').replace(/^http/, 'ws') + '/realtime/v1/websocket?apikey=' + _key + '&vsn=1.0.0';
+      _rtWs = new WebSocket(wsUrl);
+      _rtWs.onopen = function() {
+        _rtJoin('user_history', userId);
+        _rtHeartbeat = setInterval(function() { _rtSend('phoenix', 'heartbeat', {}); }, 30000);
+      };
+      _rtWs.onmessage = function(e) {
+        try {
+          var msg = JSON.parse(e.data);
+          if (msg.event === 'postgres_changes' && msg.payload && msg.payload.data) {
+            var d = msg.payload.data;
+            if (_rtCallbacks.onHistoryChange) _rtCallbacks.onHistoryChange(d.type, d.record, d.old_record);
+          }
+        } catch(err) {}
+      };
+      _rtWs.onclose = function() {
+        _rtWs = null;
+        if (_rtHeartbeat) { clearInterval(_rtHeartbeat); _rtHeartbeat = null; }
+        if (_rtUserId) setTimeout(function() { _rtConnect(_rtUserId); }, 5000);
+      };
+      _rtWs.onerror = function() { if (_rtWs) _rtWs.close(); };
+    } catch(e) {}
+  }
+
+  function startRealtime(userId, callbacks) {
+    if (callbacks) _rtCallbacks = callbacks;
+    _rtConnect(userId);
+  }
+
+  function stopRealtime() {
+    _rtUserId = '';
+    if (_rtWs) { _rtWs.close(); _rtWs = null; }
+    if (_rtHeartbeat) { clearInterval(_rtHeartbeat); _rtHeartbeat = null; }
+  }
+
   // ===== 导出 =====
   return {
     init: init,
@@ -742,6 +810,8 @@ var Cloud = (function() {
     clearHistory: clearHistory,
     handleOAuthCallback: handleOAuthCallback,
     resetPassword: resetPassword,
-    updatePasswordWithToken: updatePasswordWithToken
+    updatePasswordWithToken: updatePasswordWithToken,
+    startRealtime: startRealtime,
+    stopRealtime: stopRealtime
   };
 })();
