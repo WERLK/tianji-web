@@ -3,6 +3,7 @@ var state = { baziGender: 1, fsGender: 1, selectedZodiac: 0, selectedSpread: 0, 
 
 // ===== Init =====
 document.addEventListener('DOMContentLoaded', function() {
+  Cloud.init();
   // 检查密码重置回调
   var hash = window.location.hash;
   if (hash.indexOf('type=recovery') > -1) {
