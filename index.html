@@ -10,7 +10,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
-  <link rel="stylesheet" href="css/style.css?v=27">
+  <link rel="stylesheet" href="css/style.css?v=28">
 </head>
 <body>
 
@@ -250,12 +250,12 @@
         <button class="auth-tab" onclick="switchLoginTab('email')">邮箱</button>
       </div>
       <div class="auth-tab-content active" id="loginTab-username">
-        <input class="auth-input" id="loginUser" placeholder="用户名">
-        <input class="auth-input" id="loginPass" type="password" placeholder="密码">
+        <input class="auth-input" id="loginUser" placeholder="用户名" autocomplete="username">
+        <input class="auth-input" id="loginPass" type="password" placeholder="密码" autocomplete="current-password">
       </div>
       <div class="auth-tab-content" id="loginTab-email">
-        <input class="auth-input" id="loginEmail" placeholder="邮箱">
-        <input class="auth-input" id="loginEmailPass" type="password" placeholder="密码">
+        <input class="auth-input" id="loginEmail" placeholder="邮箱" autocomplete="email" type="email">
+        <input class="auth-input" id="loginEmailPass" type="password" placeholder="密码" autocomplete="current-password">
       </div>
       <div class="auth-error" id="loginError"></div>
       <button class="btn-primary" style="width:100%" onclick="doLogin()">登录</button>
@@ -269,15 +269,15 @@
         <button class="auth-tab" onclick="switchRegTab('email')">邮箱注册</button>
       </div>
       <div class="auth-tab-content active" id="regTab-username">
-        <input class="auth-input" id="regUser" placeholder="用户名（2-16字符）">
-        <input class="auth-input" id="regNick" placeholder="昵称（选填）">
-        <input class="auth-input" id="regPass" type="password" placeholder="密码（至少6位）">
-        <input class="auth-input" id="regPass2" type="password" placeholder="确认密码">
+        <input class="auth-input" id="regUser" placeholder="用户名（2-16字符）" autocomplete="username">
+        <input class="auth-input" id="regNick" placeholder="昵称（选填）" autocomplete="nickname">
+        <input class="auth-input" id="regPass" type="password" placeholder="密码（至少6位）" autocomplete="new-password">
+        <input class="auth-input" id="regPass2" type="password" placeholder="确认密码" autocomplete="new-password">
       </div>
       <div class="auth-tab-content" id="regTab-email">
-        <input class="auth-input" id="regEmail" placeholder="邮箱地址">
-        <input class="auth-input" id="regEmailPass" type="password" placeholder="设置密码（至少6位）">
-        <input class="auth-input" id="regEmailPass2" type="password" placeholder="确认密码">
+        <input class="auth-input" id="regEmail" placeholder="邮箱地址" autocomplete="email" type="email">
+        <input class="auth-input" id="regEmailPass" type="password" placeholder="设置密码（至少6位）" autocomplete="new-password">
+        <input class="auth-input" id="regEmailPass2" type="password" placeholder="确认密码" autocomplete="new-password">
       </div>
       <div class="auth-error" id="regError"></div>
       <button class="btn-primary" style="width:100%" onclick="doRegister()">注册</button>
@@ -317,11 +317,11 @@
   </div>
 </nav>
 
-<script src="js/supabase-config.js?v=27"></script>
-<script src="js/cloud.js?v=27"></script>
-<script src="js/knowledge.js?v=27"></script>
-<script src="js/utils.js?v=27"></script>
-<script src="js/app.js?v=27"></script>
+<script src="js/supabase-config.js?v=28"></script>
+<script src="js/cloud.js?v=28"></script>
+<script src="js/knowledge.js?v=28"></script>
+<script src="js/utils.js?v=28"></script>
+<script src="js/app.js?v=28"></script>
 <script>
 Cloud.init();
 if ('serviceWorker' in navigator) {

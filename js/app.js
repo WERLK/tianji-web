@@ -386,11 +386,36 @@ function updateUI(){
 function handleUserClick(){
   if(state.currentUser)goPage('profile');else openAuth();
 }
-function openAuth(){document.getElementById('authOverlay').classList.add('open');showLogin();}
+function openAuth(){
+  document.getElementById('authOverlay').classList.add('open');
+  showLogin();
+  _fillRememberedAccount();
+}
 function closeAuth(){document.getElementById('authOverlay').classList.remove('open');document.getElementById('loginError').textContent='';document.getElementById('regError').textContent='';}
 function closeAuthIfBg(e){if(e.target===e.currentTarget)closeAuth();}
 function showLogin(){document.getElementById('loginPanel').style.display='';document.getElementById('registerPanel').style.display='none';document.getElementById('regError').textContent='';document.getElementById('authTitle').textContent='登录';}
 function showRegister(){document.getElementById('loginPanel').style.display='none';document.getElementById('registerPanel').style.display='';document.getElementById('loginError').textContent='';document.getElementById('authTitle').textContent='注册';}
+
+// ===== 账号记忆 =====
+function _saveRememberedAccount(type, account) {
+  try {
+    localStorage.setItem('tianji_remember', JSON.stringify({ type: type, account: account }));
+  } catch(e) {}
+}
+function _fillRememberedAccount() {
+  try {
+    var saved = JSON.parse(localStorage.getItem('tianji_remember') || '{}');
+    if (saved.type === 'email' && saved.account) {
+      switchLoginTab('email');
+      document.getElementById('loginEmail').value = saved.account;
+      document.getElementById('loginEmailPass').focus();
+    } else if (saved.type === 'username' && saved.account) {
+      switchLoginTab('username');
+      document.getElementById('loginUser').value = saved.account;
+      document.getElementById('loginPass').focus();
+    }
+  } catch(e) {}
+}
 
 // Tab switching
 var _loginTab = 'username';
@@ -502,6 +527,7 @@ function doLogin() {
     if (!pass) { errEl.textContent = '请输入密码'; return; }
     Cloud.logIn(username, pass, function(err, user) {
       if (err) { errEl.textContent = err; return; }
+      _saveRememberedAccount('username', username);
       state.currentUser = user; updateUI(); closeAuth();
       showToast('欢迎回来，' + (user.nick || user.username) + '！');
     });
@@ -513,6 +539,7 @@ function doLogin() {
     if (!pass) { errEl.textContent = '请输入密码'; return; }
     Cloud.logInByEmail(email, pass, function(err, user) {
       if (err) { errEl.textContent = err; return; }
+      _saveRememberedAccount('email', email);
       state.currentUser = user; updateUI(); closeAuth();
       showToast('欢迎回来！');
     });
@@ -522,6 +549,7 @@ function doLogin() {
 function doLogout(){
   Cloud.logOut(function() {
     state.currentUser = null; updateUI(); goPage('home');
+    localStorage.removeItem('tianji_remember');
     showToast('已退出登录');
   });
 }
