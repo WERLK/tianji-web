@@ -417,12 +417,8 @@ function doResetPassword(){
   var errEl=document.getElementById('forgotError');
   errEl.textContent='';
   var email=document.getElementById('forgotEmail').value.trim();
-  if(!email){errEl.textContent='请输入邮箱地址';return;}
-  if(email.indexOf('@')===-1){errEl.textContent='邮箱格式不正确';return;}
-  // 如果是用户名，自动转换
-  if(email.indexOf('@tianji.local')===-1 && email.indexOf('.')===-1){
-    email=email+'@tianji.local';
-  }
+  if(!email){errEl.textContent='请输入注册时使用的邮箱地址';return;}
+  if(email.indexOf('@')===-1||email.indexOf('@tianji.local')>-1){errEl.textContent='请输入真实邮箱地址，不支持用户名重置';return;}
   Cloud.resetPassword(email,function(err){
     if(err){errEl.textContent=err;return;}
     document.getElementById('forgotPanel').innerHTML='<div style="text-align:center;padding:20px 0"><div style="font-size:40px;margin-bottom:12px">📧</div><div style="font-size:15px;font-weight:600;margin-bottom:8px;color:var(--gold)">重置链接已发送</div><div style="font-size:13px;color:var(--text-muted);line-height:1.6">请检查你的邮箱（包括垃圾邮件），<br>点击链接即可重置密码。</div><div class="auth-switch" style="margin-top:16px"><a href="javascript:void(0)" onclick="showLogin()">← 返回登录</a></div></div>';
