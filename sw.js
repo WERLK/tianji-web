@@ -1,4 +1,4 @@
-var CACHE_NAME = 'tianji-v20';
+var CACHE_NAME = 'tianji-v25';
 var ASSETS = [
   '/tianji-web/',
   '/tianji-web/index.html',
