@@ -151,6 +151,7 @@ body {
   content: ''; position: absolute; inset: 0;
   background: linear-gradient(135deg, rgba(212,168,83,0.05), transparent);
   opacity: 0; transition: opacity 0.3s;
+  pointer-events: none;
 }
 .module-card:active { transform: scale(0.96); }
 .module-card:active::before { opacity: 1; }

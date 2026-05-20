@@ -61,14 +61,18 @@ function initBottomBar() {
   var tabs = bar.querySelectorAll('.tab-item');
   for (var i = 0; i < tabs.length; i++) {
     (function(tab) {
-      function handle(e) {
+      var touched = false;
+      tab.addEventListener('touchstart', function() { touched = true; }, { passive: true });
+      tab.addEventListener('touchend', function(e) {
         e.preventDefault();
-        e.stopPropagation();
         var page = tab.getAttribute('data-page');
         if (page) goPage(page);
-      }
-      tab.addEventListener('touchend', handle, { passive: false });
-      tab.addEventListener('click', handle);
+      }, { passive: false });
+      tab.addEventListener('click', function(e) {
+        if (touched) { touched = false; return; }
+        var page = tab.getAttribute('data-page');
+        if (page) goPage(page);
+      });
     })(tabs[i]);
   }
 }
