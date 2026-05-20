@@ -385,8 +385,8 @@ function handleUserClick(){
 function openAuth(){document.getElementById('authOverlay').classList.add('open');showLogin();}
 function closeAuth(){document.getElementById('authOverlay').classList.remove('open');document.getElementById('loginError').textContent='';document.getElementById('regError').textContent='';}
 function closeAuthIfBg(e){if(e.target===e.currentTarget)closeAuth();}
-function showLogin(){document.getElementById('loginPanel').style.display='';document.getElementById('registerPanel').style.display='none';document.getElementById('regError').textContent='';}
-function showRegister(){document.getElementById('loginPanel').style.display='none';document.getElementById('registerPanel').style.display='';document.getElementById('loginError').textContent='';}
+function showLogin(){document.getElementById('loginPanel').style.display='';document.getElementById('registerPanel').style.display='none';document.getElementById('regError').textContent='';document.getElementById('authTitle').textContent='登录';}
+function showRegister(){document.getElementById('loginPanel').style.display='none';document.getElementById('registerPanel').style.display='';document.getElementById('loginError').textContent='';document.getElementById('authTitle').textContent='注册';}
 
 // Tab switching
 var _loginTab = 'username';
