@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
     renderKnowledgeList();
     initBottomBar();
     initFabTop();
+    restoreBg();
   });
 });
 
@@ -46,7 +47,7 @@ function goPage(name) {
 
   // Lazy init
   if (name === 'daily' && !state._dailyInit) { renderDaily(); state._dailyInit = true; }
-  if (name === 'profile' && state.currentUser) { renderProfile(); }
+  if (name === 'profile' && state.currentUser) { renderProfile(); initBgSettings(); }
 }
 
 function scrollPageTop() {
@@ -608,6 +609,129 @@ function clearHistory(){
       showToast('记录已清空');
     }
   });
+}
+
+// ===== Custom Background =====
+var BG_PRESETS = [
+  { id: 'default', label: '默认', bg: '#080810' },
+  { id: 'ink',     label: '水墨', bg: 'linear-gradient(135deg,#0a0a12 0%,#1a1a2e 50%,#0a0a12 100%)' },
+  { id: 'night',   label: '星夜', bg: 'linear-gradient(180deg,#020024 0%,#090979 50%,#020024 100%)' },
+  { id: 'sunset',  label: '暮霞', bg: 'linear-gradient(135deg,#1a0a0a 0%,#2d1b2e 50%,#1a0a0a 100%)' },
+  { id: 'forest',  label: '幽林', bg: 'linear-gradient(135deg,#0a120a 0%,#1a2e1a 50%,#0a120a 100%)' },
+  { id: 'ocean',   label: '深海', bg: 'linear-gradient(135deg,#0a0e14 0%,#0e1a2e 50%,#0a0e14 100%)' },
+  { id: 'wine',    label: '酒红', bg: 'linear-gradient(135deg,#140a0a 0%,#2e1414 50%,#140a0a 100%)' },
+  { id: 'purple',  label: '紫韵', bg: 'linear-gradient(135deg,#0e0a14 0%,#1e142e 50%,#0e0a14 100%)' },
+  { id: 'warm',    label: '暖金', bg: 'linear-gradient(135deg,#14100a 0%,#2e2414 50%,#14100a 100%)' },
+  { id: 'snow',    label: '霜白', bg: 'linear-gradient(135deg,#e8e4dc 0%,#d4d0c8 50%,#e8e4dc 100%)' }
+];
+
+function initBgSettings() {
+  var container = document.getElementById('bgPresets');
+  if (!container) return;
+  var current = getBgSetting();
+  container.innerHTML = BG_PRESETS.map(function(p) {
+    var active = current.type === 'preset' && current.value === p.id;
+    return '<div onclick="applyBgPreset(\'' + p.id + '\')" style="cursor:pointer;text-align:center">' +
+      '<div style="width:100%;aspect-ratio:1;border-radius:10px;background:' + p.bg + ';border:2px solid ' + (active ? 'var(--gold)' : 'var(--border)') + ';transition:border 0.2s"></div>' +
+      '<div style="font-size:10px;color:' + (active ? 'var(--gold)' : 'var(--text-muted)') + ';margin-top:4px">' + p.label + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function getBgSetting() {
+  try { return JSON.parse(localStorage.getItem('tianji_bg') || '{}'); } catch(e) { return {}; }
+}
+
+function applyBgSetting(type, value) {
+  localStorage.setItem('tianji_bg', JSON.stringify({ type: type, value: value }));
+  applyBgToPage(type, value);
+  initBgSettings();
+}
+
+function applyBgToPage(type, value) {
+  var el = document.getElementById('customBgLayer');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'customBgLayer';
+    el.style.cssText = 'position:fixed;inset:0;z-index:-1;background-size:cover;background-position:center;transition:opacity 0.3s';
+    document.body.prepend(el);
+  }
+  // 霜白主题切换为亮色模式
+  var isLight = type === 'preset' && value === 'snow';
+  document.documentElement.style.setProperty('--bg-primary', isLight ? '#e8e4dc' : '');
+  document.documentElement.style.setProperty('--bg-secondary', isLight ? '#d4d0c8' : '');
+  document.documentElement.style.setProperty('--bg-card', isLight ? '#f0ece4' : '');
+  document.documentElement.style.setProperty('--bg-card-hover', isLight ? '#e4e0d8' : '');
+  document.documentElement.style.setProperty('--text-primary', isLight ? '#1a1a2e' : '');
+  document.documentElement.style.setProperty('--text-secondary', isLight ? '#4a4a5e' : '');
+  document.documentElement.style.setProperty('--text-muted', isLight ? '#8a8a9e' : '');
+  document.documentElement.style.setProperty('--border', isLight ? 'rgba(0,0,0,0.08)' : '');
+  document.documentElement.style.setProperty('--border-light', isLight ? 'rgba(0,0,0,0.04)' : '');
+
+  if (type === 'preset') {
+    var preset = BG_PRESETS.find(function(p) { return p.id === value; });
+    if (preset) {
+      el.style.background = preset.bg;
+      el.style.backgroundSize = preset.bg.indexOf('gradient') >= 0 ? '' : 'cover';
+    }
+  } else if (type === 'image') {
+    el.style.background = 'url(' + value + ') center/cover no-repeat';
+  } else {
+    el.style.background = '';
+    // 恢复默认暗色
+    document.documentElement.style.setProperty('--bg-primary', '#080810');
+    document.documentElement.style.setProperty('--bg-secondary', '#0e0e1a');
+    document.documentElement.style.setProperty('--bg-card', '#141428');
+    document.documentElement.style.setProperty('--bg-card-hover', '#1a1a36');
+    document.documentElement.style.setProperty('--text-primary', '#eee8d5');
+    document.documentElement.style.setProperty('--text-secondary', '#9e9eb8');
+    document.documentElement.style.setProperty('--text-muted', '#5e5e78');
+    document.documentElement.style.setProperty('--border', 'rgba(212,168,83,0.1)');
+    document.documentElement.style.setProperty('--border-light', 'rgba(255,255,255,0.06)');
+  }
+}
+
+function applyBgPreset(id) {
+  applyBgSetting('preset', id);
+}
+
+function handleBgUpload(e) {
+  var file = e.target.files && e.target.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { showToast('图片不能超过2MB'); return; }
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    // 压缩图片
+    var img = new Image();
+    img.onload = function() {
+      var canvas = document.createElement('canvas');
+      var maxW = 800, maxH = 1200;
+      var w = img.width, h = img.height;
+      if (w > maxW) { h = h * maxW / w; w = maxW; }
+      if (h > maxH) { w = w * maxH / h; h = maxH; }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      var dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+      applyBgSetting('image', dataUrl);
+      showToast('背景已更新');
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}
+
+function resetBg() {
+  localStorage.removeItem('tianji_bg');
+  var el = document.getElementById('customBgLayer');
+  if (el) el.remove();
+  initBgSettings();
+  showToast('已恢复默认背景');
+}
+
+function restoreBg() {
+  var setting = getBgSetting();
+  if (setting.type) applyBgToPage(setting.type, setting.value);
 }
 
 // ===== Knowledge =====
