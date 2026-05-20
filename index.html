@@ -77,15 +77,12 @@
         <div class="module-name">数字能量</div>
         <div class="module-desc">灵数号码</div>
       </div>
-    </div>
-
-    <div class="section" style="margin-top:8px">
-      <div style="font-size:14px;font-weight:600;color:var(--gold);margin-bottom:12px;display:flex;align-items:center;gap:6px">
-        <span>📚</span> 命理知识库
+      <div class="module-card" onclick="goPage('knowledge')">
+        <div class="module-icon">📚</div>
+        <div class="module-name">命理知识</div>
+        <div class="module-desc">命理学知识体系</div>
       </div>
-      <div class="module-grid" id="knowledge-grid"></div>
     </div>
-
   </div>
 </div>
 
@@ -211,9 +208,17 @@
   </div>
 </div>
 
+<!-- Knowledge Hub -->
+<div class="page" id="page-knowledge">
+  <div class="page-header"><button class="back-btn" onclick="goPage('home')">←</button><h2>📚 命理知识库</h2></div>
+  <div class="section">
+    <div class="module-grid" id="knowledge-grid"></div>
+  </div>
+</div>
+
 <!-- Knowledge Detail -->
 <div class="page" id="page-knowledge-detail">
-  <div class="page-header"><button class="back-btn" id="knowledge-back-btn" onclick="goPage('home')">←</button><h2 id="knowledge-detail-title"></h2></div>
+  <div class="page-header"><button class="back-btn" id="knowledge-back-btn" onclick="goPage('knowledge')">←</button><h2 id="knowledge-detail-title"></h2></div>
   <div class="section"><div id="knowledge-detail-content"></div></div>
 </div>
 
