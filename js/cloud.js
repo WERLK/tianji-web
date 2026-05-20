@@ -405,113 +405,35 @@ var Cloud = (function() {
     });
   }
 
-  // ===== 忘记密码（Resend 直发） =====
+  // ===== 忘记密码（Supabase 内置 + hash 回调） =====
   function resetPassword(email, cb) {
     onReady(function() {
       if (!isCloud()) { cb('本地模式不支持密码重置'); return; }
-      // 1. 查找用户
-      _authPost('/token?grant_type=password', { email: email, password: '__reset_check__' })
-        .then(function() {
-          // 无论成功失败都继续（只是检查用户是否存在）
-        })
-        .catch(function() {});
-      // 2. 生成重置 token
-      var token = 'rst_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 12);
-      var expires = Date.now() + 30 * 60 * 1000; // 30分钟有效
-      // 3. 查找 user_profiles 记录
-      _restGet('user_profiles', '?select=id&email=eq.' + encodeURIComponent(email))
-        .then(function(profiles) {
-          if (!profiles || profiles.length === 0) {
-            // 尝试用 username 查找
-            var username = email.split('@')[0];
-            return _restGet('user_profiles', '?select=id&nick=eq.' + encodeURIComponent(username));
-          }
-          return Promise.resolve(profiles);
-        })
-        .then(function(profiles) {
-          if (!profiles || profiles.length === 0) {
-            cb('该邮箱未注册'); return;
-          }
-          var userId = profiles[0].id;
-          // 4. 存储 token 到 user_profiles
-          return _restPost('user_profiles', {
-            id: userId,
-            reset_token: token,
-            reset_expires: expires
-          }, true);
-        })
-        .then(function() {
-          // 5. 用 Resend 发送重置邮件
-          var resetUrl = window.location.origin + window.location.pathname + '#reset=' + token;
-          return fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: {
-              'Authorization': 'Bearer ' + (typeof RESEND_KEY !== 'undefined' ? RESEND_KEY : ''),
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              from: 'onboarding@resend.dev',
-              to: email,
-              subject: '天机阁 - 密码重置',
-              html: '<div style="max-width:480px;margin:0 auto;padding:32px 20px;font-family:sans-serif;background:#0a0a1a;color:#e8d5a8;border-radius:12px;border:1px solid rgba(201,169,110,0.3)">' +
-                '<div style="text-align:center;margin-bottom:24px"><span style="font-size:36px">🔮</span></div>' +
-                '<h2 style="text-align:center;color:#c9a96e;margin-bottom:8px">密码重置</h2>' +
-                '<p style="color:#aaa;text-align:center;margin-bottom:24px">你正在重置天机阁账号的密码，点击下方按钮设置新密码：</p>' +
-                '<div style="text-align:center"><a href="' + resetUrl + '" style="display:inline-block;padding:12px 32px;background:linear-gradient(135deg,#c9a96e,#a08050);color:#0a0a1a;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px">重置密码</a></div>' +
-                '<p style="color:#666;font-size:12px;text-align:center;margin-top:24px">链接30分钟内有效。如非本人操作请忽略此邮件。</p>' +
-                '<div style="text-align:center;margin-top:16px;color:#555;font-size:11px">— 天机阁</div>' +
-                '</div>'
-            })
-          });
-        })
-        .then(function(res) { return res.json(); })
+      _authPost('/recover', { email: email })
         .then(function(res) {
-          if (res && res.error) { cb('邮件发送失败：' + (res.message || '未知错误')); return; }
+          if (_isAuthError(res)) { cb(cloudErr(res)); return; }
           cb(null);
         })
-        .catch(function(e) { cb('操作失败，请稍后重试'); });
+        .catch(function(e) { cb(cloudErr(e)); });
     });
   }
 
-  // ===== 验证重置 token =====
-  function verifyResetToken(token, cb) {
-    onReady(function() {
-      if (!isCloud()) { cb('本地模式不支持'); return; }
-      _restGet('user_profiles', '?select=id,nick,reset_token,reset_expires&reset_token=eq.' + encodeURIComponent(token))
-        .then(function(profiles) {
-          if (!profiles || profiles.length === 0) { cb('链接无效或已过期'); return; }
-          var p = profiles[0];
-          if (!p.reset_expires || Date.now() > p.reset_expires) { cb('链接已过期，请重新申请'); return; }
-          cb(null, { userId: p.id, nick: p.nick });
-        })
-        .catch(function() { cb('验证失败'); });
-    });
-  }
-
-  // ===== 通过重置 token 设置新密码（RPC） =====
-  function resetPasswordWithToken(token, newPassword, cb) {
-    onReady(function() {
-      if (!isCloud()) { cb('本地模式不支持'); return; }
-      verifyResetToken(token, function(err, data) {
-        if (err) { cb(err); return; }
-        // 调用 RPC 函数更新密码（security definer，无需 admin 权限）
-        fetch(_url + '/rest/v1/rpc/app_reset_password', {
-          method: 'POST',
-          headers: _headers(false),
-          body: JSON.stringify({ p_user_id: data.userId, p_new_password: newPassword })
-        }).then(function(r) { return r.json(); })
-          .then(function(res) {
-            // 清除 token
-            _restPost('user_profiles', {
-              id: data.userId,
-              reset_token: null,
-              reset_expires: null
-            }, true).catch(function() {});
-            cb(null);
-          })
-          .catch(function() { cb('密码重置失败，请稍后重试'); });
-      });
-    });
+  // ===== 通过 recovery token 设置新密码 =====
+  function updatePasswordWithToken(accessToken, newPassword, cb) {
+    fetch(_url + '/auth/v1/user', {
+      method: 'PUT',
+      headers: {
+        'apikey': _key,
+        'Authorization': 'Bearer ' + accessToken,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ password: newPassword })
+    }).then(function(r) { return r.json(); })
+      .then(function(res) {
+        if (res && (res.error || res.error_code || res.msg)) { cb(cloudErr(res)); return; }
+        cb(null);
+      })
+      .catch(function() { cb('密码重置失败，请稍后重试'); });
   }
 
   // ===== 退出 =====
@@ -820,7 +742,6 @@ var Cloud = (function() {
     clearHistory: clearHistory,
     handleOAuthCallback: handleOAuthCallback,
     resetPassword: resetPassword,
-    verifyResetToken: verifyResetToken,
-    resetPasswordWithToken: resetPasswordWithToken
+    updatePasswordWithToken: updatePasswordWithToken
   };
 })();
