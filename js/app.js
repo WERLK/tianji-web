@@ -473,14 +473,17 @@ function showForgotPassword(){
   _updateResetCooldown();
 }
 var _resetCooldownTimer = null;
+function _getResetRemain() {
+  var end = parseInt(localStorage.getItem('tianji_reset_cd') || '0', 10);
+  return Math.max(0, Math.ceil((end - Date.now()) / 1000));
+}
 function _updateResetCooldown() {
   if (_resetCooldownTimer) { clearInterval(_resetCooldownTimer); _resetCooldownTimer = null; }
   var btn = document.querySelector('#forgotPanel .btn-primary');
   if (!btn) return;
-  var cooldownEnd = parseInt(localStorage.getItem('tianji_reset_cd') || '0', 10);
   function tick() {
+    var remain = _getResetRemain();
     var cdEl = document.getElementById('resetCooldown');
-    var remain = Math.max(0, Math.ceil((cooldownEnd - Date.now()) / 1000));
     if (remain > 0) {
       btn.disabled = true;
       if (cdEl) {
@@ -497,17 +500,23 @@ function _updateResetCooldown() {
       btn.disabled = false;
       var el = document.getElementById('resetCooldown');
       if (el) el.remove();
-      clearInterval(_resetCooldownTimer);
-      _resetCooldownTimer = null;
+      if (_resetCooldownTimer) { clearInterval(_resetCooldownTimer); _resetCooldownTimer = null; }
       localStorage.removeItem('tianji_reset_cd');
     }
   }
   tick();
-  if (cooldownEnd > Date.now()) _resetCooldownTimer = setInterval(tick, 1000);
+  if (_getResetRemain() > 0) _resetCooldownTimer = setInterval(tick, 1000);
 }
 function doResetPassword(){
   var errEl=document.getElementById('forgotError');
   errEl.textContent='';
+  // 冷却检查
+  var remain = _getResetRemain();
+  if (remain > 0) {
+    errEl.textContent = '操作过于频繁，请 ' + remain + ' 秒后重试';
+    _updateResetCooldown();
+    return;
+  }
   var email=document.getElementById('forgotEmail').value.trim();
   if(!email){errEl.textContent='请输入注册时使用的邮箱地址';return;}
   if(email.indexOf('@')===-1||email.indexOf('@tianji.local')>-1){errEl.textContent='请输入真实邮箱地址，不支持用户名重置';return;}
