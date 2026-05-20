@@ -172,7 +172,7 @@ var Cloud = (function() {
           password: password,
           data: meta
         }).then(function(res) {
-          if (res.error) { cb(cloudErr(res.error)); return; }
+          if (_isAuthError(res)) { cb(cloudErr(res)); return; }
           if (res.access_token) {
             _saveSession(res.access_token, res.refresh_token);
           }
@@ -207,7 +207,7 @@ var Cloud = (function() {
         if (email.indexOf('@') === -1) email = email + '@tianji.local';
         _authPost('/token?grant_type=password', { email: email, password: password })
           .then(function(res) {
-            if (res.error) { cb(cloudErr(res.error)); return; }
+            if (_isAuthError(res)) { cb(cloudErr(res)); return; }
             _saveSession(res.access_token, res.refresh_token);
             // 保存映射
             try {
@@ -230,7 +230,7 @@ var Cloud = (function() {
       if (isCloud()) {
         _authPost('/token?grant_type=password', { phone: phone, password: password })
           .then(function(res) {
-            if (res.error) { cb(cloudErr(res.error)); return; }
+            if (_isAuthError(res)) { cb(cloudErr(res)); return; }
             _saveSession(res.access_token, res.refresh_token);
             ensureProfile(res.user).then(function(profile) {
               cb(null, sbToLocal(res.user, profile));
@@ -247,7 +247,7 @@ var Cloud = (function() {
       if (isCloud()) {
         _authPost('/token?grant_type=password', { email: email, password: password })
           .then(function(res) {
-            if (res.error) { cb(cloudErr(res.error)); return; }
+            if (_isAuthError(res)) { cb(cloudErr(res)); return; }
             _saveSession(res.access_token, res.refresh_token);
             ensureProfile(res.user).then(function(profile) {
               cb(null, sbToLocal(res.user, profile));
@@ -267,7 +267,7 @@ var Cloud = (function() {
         var body = isPhone ? { phone: contact } : { email: contact };
         _authPost('/otp', body)
           .then(function(res) {
-            if (res.error) { cb(cloudErr(res.error)); return; }
+            if (_isAuthError(res)) { cb(cloudErr(res)); return; }
             cb(null, null);
           }).catch(function(e) { cb(cloudErr(e)); });
       } else {
@@ -287,7 +287,7 @@ var Cloud = (function() {
         var body = isPhone ? { phone: contact, otp: code, type: 'sms' } : { email: contact, otp: code, type: 'email' };
         _authPost('/verify', body)
           .then(function(res) {
-            if (res.error) { cb(cloudErr(res.error)); return; }
+            if (_isAuthError(res)) { cb(cloudErr(res)); return; }
             _saveSession(res.access_token, res.refresh_token);
             ensureProfile(res.user).then(function(profile) {
               cb(null, sbToLocal(res.user, profile));
@@ -370,7 +370,7 @@ var Cloud = (function() {
           password: fakePass,
           data: { isGuest: true, nick: '游客' }
         }).then(function(res) {
-          if (res.error) { cb(cloudErr(res.error)); return; }
+          if (_isAuthError(res)) { cb(cloudErr(res)); return; }
           if (res.access_token) {
             _saveSession(res.access_token, res.refresh_token);
           }
@@ -504,6 +504,10 @@ var Cloud = (function() {
   }
 
   // ===== 错误处理 =====
+  function _isAuthError(res) {
+    return !!(res && (res.error || res.error_code || (typeof res.code === 'number' && res.code >= 400)));
+  }
+
   function cloudErr(e) {
     var msg = '';
     var code = '';
