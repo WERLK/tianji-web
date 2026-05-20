@@ -468,7 +468,7 @@ function showForgotPassword(){
   // 恢复原始表单（发送成功后innerHTML会被替换）
   var fp=document.getElementById('forgotPanel');
   if(!document.getElementById('forgotEmail')){
-    fp.innerHTML='<p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;line-height:1.6">输入注册时使用的<strong>真实邮箱</strong>，我们将发送密码重置链接。<br><span style="font-size:11px;opacity:0.7">（仅支持邮箱注册的账号，用户名注册不支持）</span></p><input class="auth-input" id="forgotEmail" placeholder="注册邮箱" autocomplete="email" type="email"><div class="auth-error" id="forgotError"></div><button class="btn-primary" style="width:100%" onclick="doResetPassword()">发送重置链接</button><div class="auth-switch"><a href="javascript:void(0)" onclick="showLogin()">← 返回登录</a></div>';
+    fp.innerHTML='<p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;line-height:1.6">输入注册时使用的<strong>用户名或邮箱</strong>，我们将发送密码重置链接。<br><span style="font-size:11px;opacity:0.7">（用户名注册的账号需已绑定邮箱）</span></p><input class="auth-input" id="forgotEmail" placeholder="用户名或邮箱" autocomplete="email" type="text"><div class="auth-error" id="forgotError"></div><button class="btn-primary" style="width:100%" onclick="doResetPassword()">发送重置链接</button><div class="auth-switch"><a href="javascript:void(0)" onclick="showLogin()">← 返回登录</a></div>';
   }
   _updateResetCooldown();
 }
@@ -517,12 +517,11 @@ function doResetPassword(){
     _updateResetCooldown();
     return;
   }
-  var email=document.getElementById('forgotEmail').value.trim();
-  if(!email){errEl.textContent='请输入注册时使用的邮箱地址';return;}
-  if(email.indexOf('@')===-1||email.indexOf('@tianji.local')>-1){errEl.textContent='请输入真实邮箱地址，不支持用户名重置';return;}
+  var account=document.getElementById('forgotEmail').value.trim();
+  if(!account){errEl.textContent='请输入用户名或邮箱地址';return;}
   var btn=document.querySelector('#forgotPanel .btn-primary');
   btn.textContent='发送中...';btn.disabled=true;
-  Cloud.resetPassword(email,function(err){
+  Cloud.resetPassword(account,function(err){
     if(err){btn.textContent='发送重置链接';btn.disabled=false;errEl.textContent=err;return;}
     localStorage.setItem('tianji_reset_cd', String(Date.now() + 60 * 1000));
     document.getElementById('forgotPanel').innerHTML='<div style="text-align:center;padding:20px 0"><div style="font-size:40px;margin-bottom:12px">📧</div><div style="font-size:15px;font-weight:600;margin-bottom:8px;color:var(--gold)">重置链接已发送</div><div style="font-size:13px;color:var(--text-muted);line-height:1.6">请检查你的邮箱（包括垃圾邮件），<br>点击链接即可重置密码。</div><div class="auth-switch" style="margin-top:16px"><a href="javascript:void(0)" onclick="showLogin()">← 返回登录</a></div></div>';

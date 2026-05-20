@@ -405,33 +405,35 @@ var Cloud = (function() {
     });
   }
 
-  // ===== 忘记密码（Resend 直发 + Supabase 兜底） =====
-  function resetPassword(email, cb) {
+  // ===== 忘记密码（支持用户名/邮箱，Resend 直发 + Supabase 兜底） =====
+  function resetPassword(account, cb) {
     onReady(function() {
       if (!isCloud()) { cb('本地模式不支持密码重置'); return; }
       var done = false;
       function finish(err) { if (!done) { done = true; cb(err); } }
 
-      // 1. 查找用户 profile
-      _restGet('user_profiles', '?select=id,nick,email&email=eq.' + encodeURIComponent(email))
+      // 1. 按邮箱或用户名查找 profile
+      var isEmail = account.indexOf('@') > -1;
+      var query = isEmail
+        ? '?select=id,nick,email&email=eq.' + encodeURIComponent(account)
+        : '?select=id,nick,email&nick=eq.' + encodeURIComponent(account);
+
+      _restGet('user_profiles', query)
         .then(function(profiles) {
-          if (!Array.isArray(profiles) || profiles.length === 0) {
-            var uname = email.split('@')[0];
-            return _restGet('user_profiles', '?select=id,nick,email&nick=eq.' + encodeURIComponent(uname));
-          }
-          return profiles;
-        })
-        .then(function(profiles) {
-          if (!Array.isArray(profiles) || profiles.length === 0) { finish('该邮箱未注册'); return; }
+          if (!Array.isArray(profiles) || profiles.length === 0) { finish('该账号未注册'); return; }
           var p = profiles[0];
+          var userEmail = p.email;
+          if (!userEmail || userEmail.indexOf('@') === -1) { finish('该账号未绑定邮箱，无法发送重置链接'); return; }
           // 2. 生成一次性 token 并存储
           var token = 'rst_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 12);
           var expires = Date.now() + 30 * 60 * 1000;
-          return _restPost('user_profiles', { id: p.id, reset_token: token, reset_expires: expires, email: email }, true)
-            .then(function() { return token; });
+          return _restPost('user_profiles', { id: p.id, reset_token: token, reset_expires: expires }, true)
+            .then(function() { return { token: token, email: userEmail }; });
         })
-        .then(function(token) {
-          if (!token) return;
+        .then(function(data) {
+          if (!data) return;
+          var token = data.token;
+          var userEmail = data.email;
           // 3. 用 Resend 发邮件
           var resetUrl = window.location.origin + window.location.pathname + '?reset=' + token;
           var resendKey = (typeof RESEND_KEY !== 'undefined') ? RESEND_KEY : '';
@@ -443,7 +445,7 @@ var Cloud = (function() {
               headers: { 'Authorization': 'Bearer ' + resendKey, 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 from: fromAddr,
-                to: email,
+                to: userEmail,
                 subject: '天机阁 - 密码重置',
                 html: '<div style="max-width:480px;margin:0 auto;padding:32px 20px;font-family:-apple-system,sans-serif;background:#0a0a1a;color:#e8d5a8;border-radius:12px;border:1px solid rgba(201,169,110,0.3)">' +
                   '<div style="text-align:center;margin-bottom:24px"><span style="font-size:36px">🔮</span></div>' +
@@ -459,13 +461,13 @@ var Cloud = (function() {
                 finish(null);
               })
               .catch(function() {
-                return _authPost('/recover', { email: email }).then(function(r) {
+                return _authPost('/recover', { email: userEmail }).then(function(r) {
                   if (_isAuthError(r)) { finish(cloudErr(r)); return; }
                   finish(null);
                 });
               });
           } else {
-            return _authPost('/recover', { email: email }).then(function(r) {
+            return _authPost('/recover', { email: userEmail }).then(function(r) {
               if (_isAuthError(r)) { finish(cloudErr(r)); return; }
               finish(null);
             });
