@@ -50,13 +50,28 @@ function initFabTop() {
 
 // ===== Bottom Tab =====
 function initBottomBar() {
-  document.querySelectorAll('#bottomBar .tab-item').forEach(tab => {
-    tab.addEventListener('click', function(e) {
+  var bar = document.getElementById('bottomBar');
+  if (!bar) return;
+  var tabs = bar.querySelectorAll('.tab-item');
+  tabs.forEach(function(tab) {
+    function handleTab(e) {
+      e.preventDefault();
       e.stopPropagation();
-      document.querySelectorAll('#bottomBar .tab-item').forEach(t => t.classList.remove('active'));
-      this.classList.add('active');
-      scrollTo(this.dataset.target);
-    });
+      tabs.forEach(function(t) { t.classList.remove('active'); });
+      tab.classList.add('active');
+      var target = tab.getAttribute('data-target');
+      if (target) {
+        var el = document.querySelector(target);
+        if (el) {
+          var navH = document.getElementById('topNav').offsetHeight;
+          var barH = window.innerWidth < 900 ? 60 : 0;
+          var y = el.getBoundingClientRect().top + window.scrollY - navH - barH - 12;
+          window.scrollTo({ top: y, behavior: 'smooth' });
+        }
+      }
+    }
+    tab.addEventListener('touchend', handleTab, { passive: false });
+    tab.addEventListener('click', handleTab);
   });
 }
 
