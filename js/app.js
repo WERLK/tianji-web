@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initNavHighlight();
   initSmoothScroll();
   initFabTop();
+  initBottomBar();
 });
 
 // ===== Smooth scroll with offset =====
@@ -48,10 +49,15 @@ function initFabTop() {
 }
 
 // ===== Bottom Tab =====
-function tabGo(el) {
-  document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  scrollTo(el.dataset.target);
+function initBottomBar() {
+  document.querySelectorAll('#bottomBar .tab-item').forEach(tab => {
+    tab.addEventListener('click', function(e) {
+      e.stopPropagation();
+      document.querySelectorAll('#bottomBar .tab-item').forEach(t => t.classList.remove('active'));
+      this.classList.add('active');
+      scrollTo(this.dataset.target);
+    });
+  });
 }
 
 // ===== Nav highlight =====
