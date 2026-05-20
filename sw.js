@@ -1,4 +1,4 @@
-var CACHE_NAME = 'tianji-cache';
+var CACHE_NAME = 'tianji-v6';
 var ASSETS = [
   '/tianji-web/',
   '/tianji-web/index.html',
@@ -15,11 +15,6 @@ var ASSETS = [
 ];
 
 self.addEventListener('install', function(e) {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then(function(cache) {
-      return cache.addAll(ASSETS);
-    })
-  );
   self.skipWaiting();
 });
 
@@ -35,6 +30,7 @@ self.addEventListener('activate', function(e) {
   self.clients.claim();
 });
 
+// Network First: 优先网络，失败才用缓存
 self.addEventListener('fetch', function(e) {
   e.respondWith(
     fetch(e.request).then(function(response) {
