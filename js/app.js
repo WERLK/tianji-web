@@ -659,3 +659,158 @@ function showKnowledge(key) {
   document.getElementById('knowledge-detail-content').innerHTML = content;
   goPage('knowledge-detail');
 }
+
+// ===== Divination: Ziwei Doushu =====
+function doZiwei() {
+  var y = +document.getElementById('ziwei-year').value;
+  var m = +document.getElementById('ziwei-month').value;
+  var d = +document.getElementById('ziwei-day').value;
+  var h = +document.getElementById('ziwei-hour').value;
+  if (!y || !m || !d) return alert('请填写完整的出生信息');
+  var result = Divination.calcZiwei(y, m, d, h, state.ziweiGender !== undefined ? state.ziweiGender : 1);
+  addHistory('ziwei', '紫微斗数 · ' + result.dayMaster + result.dayMasterWuxing + '命');
+  var rd = result.readings;
+  document.getElementById('ziwei-result').innerHTML =
+    '<div class="result-area">' +
+      '<div class="card"><h3 style="color:var(--gold);margin-bottom:14px;font-family:serif;font-size:16px">⭐ 紫微斗数命盘</h3>' +
+        '<div class="info-grid">' +
+          '<div class="info-item"><div class="info-label">日主</div><div class="info-value gold">' + result.dayMaster + '（' + result.dayMasterWuxing + '）</div></div>' +
+          '<div class="info-item"><div class="info-label">命宫主星</div><div class="info-value gold">' + (result.palaces[0].mainStar || '无主星') + '</div></div>' +
+        '</div>' +
+        '<div style="margin-top:12px;font-size:12px;color:var(--text-muted)">四化：' +
+          result.sihua.map(function(s) { return s.star + s.type; }).join(' · ') +
+        '</div>' +
+      '</div>' +
+      '<div class="card" style="margin-top:14px"><h3 style="color:var(--gold);margin-bottom:12px;font-family:serif;font-size:16px">命盘解读</h3>' +
+        '<div class="reading-block"><div class="reading-title">🎭 性格</div><div class="reading-text">' + rd.personality + '</div></div>' +
+        '<div class="reading-block"><div class="reading-title">💼 事业</div><div class="reading-text">' + rd.career + '</div></div>' +
+        '<div class="reading-block"><div class="reading-title">💕 感情</div><div class="reading-text">' + rd.love + '</div></div>' +
+        '<div class="reading-block"><div class="reading-title">💰 财运</div><div class="reading-text">' + rd.wealth + '</div></div>' +
+        '<div class="reading-block"><div class="reading-title">🏥 健康</div><div class="reading-text">' + rd.health + '</div></div>' +
+      '</div>' +
+    '</div>';
+}
+
+// ===== Divination: Liuyao =====
+function tossLiuyaoCoin() { Divination.tossLiuyaoCoin(); }
+function resetLiuyao() { Divination.resetLiuyao(); }
+function doLiuyaoResult() { Divination.doLiuyaoResult(); }
+
+// ===== Divination: Xiangxue =====
+function doXiangxue() {
+  var faceShape = +document.getElementById('face-shape').value;
+  var forehead = +document.getElementById('face-forehead').value;
+  var eyes = +document.getElementById('face-eyes').value;
+  var nose = +document.getElementById('face-nose').value;
+  var mouth = +document.getElementById('face-mouth').value;
+  var brow = +document.getElementById('face-brow').value;
+  var result = Divination.analyzeXiangxue(faceShape, forehead, eyes, nose, mouth, brow);
+  addHistory('xiangxue', '面相手相分析');
+  var sc = result.scores;
+  document.getElementById('xiangxue-result').innerHTML =
+    '<div class="result-area">' +
+      '<div class="card"><h3 style="color:var(--gold);margin-bottom:14px;font-family:serif;font-size:16px">👁 面相分析</h3>' +
+        '<div class="bar-group">' +
+          '<div class="bar-item"><span class="bar-icon">💼</span><span class="bar-label">事业</span><div class="bar-track"><div class="bar-fill" style="width:' + sc.career + '%;background:#a29bfe"></div></div><span class="bar-value">' + sc.career + '</span></div>' +
+          '<div class="bar-item"><span class="bar-icon">💰</span><span class="bar-label">财运</span><div class="bar-track"><div class="bar-fill" style="width:' + sc.wealth + '%;background:#fdcb6e"></div></div><span class="bar-value">' + sc.wealth + '</span></div>' +
+          '<div class="bar-item"><span class="bar-icon">💕</span><span class="bar-label">感情</span><div class="bar-track"><div class="bar-fill" style="width:' + sc.love + '%;background:#fd79a8"></div></div><span class="bar-value">' + sc.love + '</span></div>' +
+          '<div class="bar-item"><span class="bar-icon">🏃</span><span class="bar-label">健康</span><div class="bar-track"><div class="bar-fill" style="width:' + sc.health + '%;background:#00b894"></div></div><span class="bar-value">' + sc.health + '</span></div>' +
+        '</div>' +
+      '</div>' +
+      result.details.map(function(d) {
+        return '<div class="card" style="margin-top:12px"><div style="font-size:14px;font-weight:600;color:var(--gold);margin-bottom:8px">' + d.title + '</div><div class="reading-text">' + d.text + '</div></div>';
+      }).join('') +
+    '</div>';
+}
+
+// ===== Divination: Qimen Dunjia =====
+function doQimen() {
+  var type = +document.getElementById('qimen-type').value;
+  var result = Divination.calcQimen(type);
+  addHistory('qimen', '奇门遁甲 · ' + result.type);
+  var statusColor = result.lucky ? '#00b894' : result.neutral ? '#fdcb6e' : '#F44336';
+  var statusText = result.lucky ? '大吉' : result.neutral ? '平' : '凶';
+  document.getElementById('qimen-result').innerHTML =
+    '<div class="result-area">' +
+      '<div class="card"><h3 style="color:var(--gold);margin-bottom:14px;font-family:serif;font-size:16px">🏔 奇门遁甲排盘</h3>' +
+        '<div class="info-grid">' +
+          '<div class="info-item"><div class="info-label">局数</div><div class="info-value gold">' + result.ju + '局</div></div>' +
+          '<div class="info-item"><div class="info-label">值符</div><div class="info-value">' + result.shen + '</div></div>' +
+          '<div class="info-item"><div class="info-label">天盘星</div><div class="info-value">' + result.xing + '</div></div>' +
+          '<div class="info-item"><div class="info-label">值使门</div><div class="info-value">' + result.shiMen + '</div></div>' +
+          '<div class="info-item"><div class="info-label">落宫</div><div class="info-value">' + result.gong + '</div></div>' +
+          '<div class="info-item"><div class="info-label">吉凶</div><div class="info-value" style="color:' + statusColor + '">' + statusText + '</div></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="card" style="margin-top:14px"><div style="font-size:14px;font-weight:600;color:var(--gold);margin-bottom:8px">🔮 ' + result.type + '断局</div><div class="reading-text">' + result.result + '</div></div>' +
+    '</div>';
+}
+
+// ===== Divination: Meihua Yishu =====
+function doMeihua() {
+  var upper = +document.getElementById('meihua-upper').value;
+  var lower = +document.getElementById('meihua-lower').value;
+  var dong = +document.getElementById('meihua-dong').value;
+  var result = Divination.calcMeihua(upper || 0, lower || 0, dong || 0);
+  addHistory('meihua', '梅花易数 · ' + result.guaName);
+  document.getElementById('meihua-result').innerHTML =
+    '<div class="result-area">' +
+      '<div class="card"><h3 style="color:var(--gold);margin-bottom:14px;font-family:serif;font-size:16px">🌸 梅花易数</h3>' +
+        '<div style="text-align:center;margin:16px 0">' +
+          '<div style="font-size:36px;letter-spacing:8px">' + result.upper.img + '<br><span style="font-size:14px;color:var(--text-muted)">上卦（' + result.upper.name + '·' + result.upper.attr + '）</span></div>' +
+          '<div style="font-size:36px;letter-spacing:8px;margin-top:8px">' + result.lower.img + '<br><span style="font-size:14px;color:var(--text-muted)">下卦（' + result.lower.name + '·' + result.lower.attr + '）</span></div>' +
+          '<div style="margin-top:12px;font-size:13px;color:var(--text-muted)">动爻：第' + result.dong + '爻</div>' +
+        '</div>' +
+        '<div class="info-grid">' +
+          '<div class="info-item"><div class="info-label">卦名</div><div class="info-value gold">' + result.guaName + '</div></div>' +
+          '<div class="info-item"><div class="info-label">体卦</div><div class="info-value">' + result.ti.name + '（' + result.ti.attr + '）</div></div>' +
+          '<div class="info-item"><div class="info-label">用卦</div><div class="info-value">' + result.yong.name + '（' + result.yong.attr + '）</div></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="card" style="margin-top:14px"><div style="font-size:14px;font-weight:600;color:var(--gold);margin-bottom:8px">体用关系</div><div class="reading-text">' + result.wxRelation + '</div></div>' +
+      '<div class="card" style="margin-top:14px"><div style="font-size:14px;font-weight:600;color:var(--gold);margin-bottom:8px">卦象解读</div><div class="reading-text">' + result.reading + '</div></div>' +
+      '<div class="card" style="margin-top:14px"><div style="font-size:14px;font-weight:600;color:var(--gold);margin-bottom:8px">💡 建议</div><div class="reading-text">' + result.advice + '</div></div>' +
+    '</div>';
+}
+
+// ===== Divination: Wuxing Mingli =====
+function doWuxing() {
+  var y = +document.getElementById('wuxing-year').value;
+  var m = +document.getElementById('wuxing-month').value;
+  var d = +document.getElementById('wuxing-day').value;
+  var h = +document.getElementById('wuxing-hour').value;
+  if (!y || !m || !d) return alert('请填写完整的出生信息');
+  var result = Divination.calcWuxing(y, m, d, h);
+  addHistory('wuxing', '五行命理 · ' + result.dayWx + '命');
+  var wx = result.wxCount;
+  var maxVal = Math.max(wx['金'], wx['木'], wx['水'], wx['火'], wx['土'], 1);
+  document.getElementById('wuxing-result').innerHTML =
+    '<div class="result-area">' +
+      '<div class="card"><h3 style="color:var(--gold);margin-bottom:14px;font-family:serif;font-size:16px">☯ 五行命理分析</h3>' +
+        '<div class="info-grid">' +
+          '<div class="info-item"><div class="info-label">日主五行</div><div class="info-value gold">' + result.dayWx + '</div></div>' +
+          '<div class="info-item"><div class="info-label">最旺五行</div><div class="info-value">' + result.maxWx + '</div></div>' +
+          '<div class="info-item"><div class="info-label">最弱五行</div><div class="info-value">' + result.minWx + '</div></div>' +
+          '<div class="info-item"><div class="info-label">五行平衡</div><div class="info-value" style="color:' + (result.balanced ? '#00b894' : '#fdcb6e') + '">' + (result.balanced ? '均衡' : '偏旺/偏弱') + '</div></div>' +
+          '<div class="info-item"><div class="info-label">喜用神</div><div class="info-value" style="color:#00b894">' + result.xiYong + '</div></div>' +
+          '<div class="info-item"><div class="info-label">忌神</div><div class="info-value" style="color:#F44336">' + result.jiShen + '</div></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="card" style="margin-top:14px"><h3 style="color:var(--gold);margin-bottom:12px;font-family:serif;font-size:16px">五行分布</h3>' +
+        '<div class="wuxing-bars">' +
+          ['金','木','水','火','土'].map(function(w) {
+            return '<div class="wx-item"><span class="wx-name wx-' + w + '">' + result.wxEmojis[w] + ' ' + w + '</span><div class="bar-track"><div class="bar-fill" style="width:' + (wx[w] / maxVal * 100) + '%;background:' + result.wxColors[w] + '"></div></div><span style="width:20px;text-align:right;font-size:13px;color:var(--text-secondary)">' + wx[w] + '</span></div>';
+          }).join('') +
+        '</div>' +
+      '</div>' +
+      '<div class="card" style="margin-top:14px"><h3 style="color:var(--gold);margin-bottom:12px;font-family:serif;font-size:16px">开运指南</h3>' +
+        '<div class="reading-text">' +
+          '🎨 <strong>幸运颜色：</strong>与' + result.xiYong + '对应的颜色<br>' +
+          '🧭 <strong>有利方位：</strong>' + result.wxDir[result.xiYong] + '方<br>' +
+          '📅 <strong>旺季月份：</strong>' + result.wxSeason[result.xiYong] + '<br>' +
+          '🍎 <strong>宜食食物：</strong>' + result.wxFood[result.xiYong] + '<br>' +
+          '🔢 <strong>幸运数字：</strong>' + result.wxNum[result.xiYong] +
+        '</div>' +
+      '</div>' +
+    '</div>';
+}

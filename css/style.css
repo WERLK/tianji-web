@@ -546,7 +546,15 @@ body {
   content: '·';
   position: absolute; left: 4px;
   color: var(--gold); font-weight: 700;
+  pointer-events: none;
 }
+
+/* ===== Divination ===== */
+.wuxing-bars { display: flex; flex-direction: column; gap: 10px; }
+.wx-item { display: flex; align-items: center; gap: 8px; }
+.wx-name { width: 50px; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+.wx-金 { color: #FFD700; } .wx-木 { color: #4CAF50; } .wx-水 { color: #2196F3; }
+.wx-火 { color: #F44336; } .wx-土 { color: #CD853F; }
 
 /* ===== Loading ===== */
 .loading { text-align: center; padding: 40px 20px; }

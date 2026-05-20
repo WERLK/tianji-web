@@ -83,6 +83,45 @@
         <div class="module-desc">命理学知识体系</div>
       </div>
     </div>
+
+    <div class="section" style="margin-top:8px">
+      <div style="font-size:14px;font-weight:600;color:var(--gold);margin-bottom:12px;display:flex;align-items:center;gap:6px">
+        <span>🔮</span> 命理术数
+      </div>
+      <div class="module-grid">
+        <div class="module-card" onclick="goPage('ziwei')">
+          <div class="module-icon">⭐</div>
+          <div class="module-name">紫微斗数</div>
+          <div class="module-desc">十二宫命盘</div>
+        </div>
+        <div class="module-card" onclick="goPage('liuyao')">
+          <div class="module-icon">🎲</div>
+          <div class="module-name">六爻占卜</div>
+          <div class="module-desc">纳甲筮法</div>
+        </div>
+        <div class="module-card" onclick="goPage('xiangxue')">
+          <div class="module-icon">👁</div>
+          <div class="module-name">面相手相</div>
+          <div class="module-desc">五官气色分析</div>
+        </div>
+        <div class="module-card" onclick="goPage('qimen')">
+          <div class="module-icon">🏔</div>
+          <div class="module-name">奇门遁甲</div>
+          <div class="module-desc">排盘断局</div>
+        </div>
+        <div class="module-card" onclick="goPage('meihua')">
+          <div class="module-icon">🌸</div>
+          <div class="module-name">梅花易数</div>
+          <div class="module-desc">数字起卦</div>
+        </div>
+        <div class="module-card" onclick="goPage('wuxing')">
+          <div class="module-icon">☯</div>
+          <div class="module-name">五行命理</div>
+          <div class="module-desc">五行属性分析</div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -222,6 +261,163 @@
   <div class="section"><div id="knowledge-detail-content"></div></div>
 </div>
 
+
+
+<!-- Ziwei Doushu -->
+
+<div class="page" id="page-ziwei">
+  <div class="page-header"><button class="back-btn" onclick="goPage('home')">←</button><h2>⭐ 紫微斗数</h2></div>
+  <div class="section">
+    <div class="card">
+      <div class="form-row"><label>出生年份</label><input type="number" id="ziwei-year" placeholder="如 1990" min="1900" max="2100"></div>
+      <div class="form-row"><label>月份</label><input type="number" id="ziwei-month" placeholder="1-12" min="1" max="12"></div>
+      <div class="form-row"><label>日期</label><input type="number" id="ziwei-day" placeholder="1-31" min="1" max="31"></div>
+      <div class="form-row"><label>时辰</label>
+        <select id="ziwei-hour">
+          <option value="0">子时 (23:00-01:00)</option><option value="1">丑时 (01:00-03:00)</option>
+          <option value="2">寅时 (03:00-05:00)</option><option value="3">卯时 (05:00-07:00)</option>
+          <option value="4">辰时 (07:00-09:00)</option><option value="5">巳时 (09:00-11:00)</option>
+          <option value="6">午时 (11:00-13:00)</option><option value="7">未时 (13:00-15:00)</option>
+          <option value="8">申时 (15:00-17:00)</option><option value="9">酉时 (17:00-19:00)</option>
+          <option value="10">戌时 (19:00-21:00)</option><option value="11">亥时 (21:00-23:00)</option>
+        </select>
+      </div>
+      <div class="form-row"><label>性别</label>
+        <div style="display:flex;gap:8px">
+          <button class="gender-btn active" onclick="state.ziweiGender=1;this.parentElement.querySelectorAll('.gender-btn').forEach(function(b){b.classList.remove('active')});this.classList.add('active')">男</button>
+          <button class="gender-btn" onclick="state.ziweiGender=0;this.parentElement.querySelectorAll('.gender-btn').forEach(function(b){b.classList.remove('active')});this.classList.add('active')">女</button>
+        </div>
+      </div>
+      <button class="btn-primary" style="width:100%;margin-top:8px" onclick="doZiwei()">排盘分析</button>
+    </div>
+    <div id="ziwei-result" style="margin-top:16px"></div>
+  </div>
+</div>
+
+<!-- Liuyao -->
+
+<div class="page" id="page-liuyao">
+  <div class="page-header"><button class="back-btn" onclick="goPage('home')">←</button><h2>🎲 六爻占卜</h2></div>
+  <div class="section">
+    <div class="card">
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;text-align:center">心中默念所测之事，点击下方铜钱起卦</p>
+      <div style="text-align:center;margin:20px 0">
+        <div id="liuyao-coins" style="font-size:48px;letter-spacing:12px;cursor:pointer" onclick="tossLiuyaoCoin()">🪙🪙🪙</div>
+        <div id="liuyao-progress" style="font-size:12px;color:var(--text-muted);margin-top:8px">第 0/6 次</div>
+      </div>
+      <div id="liuyao-gua-preview" style="text-align:center;font-size:24px;margin:12px 0;min-height:36px"></div>
+      <button class="btn-primary" style="width:100%" id="liuyao-reset-btn" onclick="resetLiuyao()" disabled>重新起卦</button>
+    </div>
+    <div id="liuyao-result" style="margin-top:16px"></div>
+  </div>
+</div>
+
+<!-- Xiangxue -->
+
+<div class="page" id="page-xiangxue">
+  <div class="page-header"><button class="back-btn" onclick="goPage('home')">←</button><h2>👁 面相手相</h2></div>
+  <div class="section">
+    <div class="card">
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px">选择您的面部特征，获取相学分析</p>
+      <div class="form-row"><label>脸型</label>
+        <select id="face-shape">
+          <option value="0">圆形脸</option><option value="1">方形脸</option>
+          <option value="2"> oval 脸</option><option value="3">长形脸</option>
+          <option value="4">三角形脸</option>
+        </select>
+      </div>
+      <div class="form-row"><label>额头</label>
+        <select id="face-forehead">
+          <option value="0">宽阔饱满</option><option value="1">适中</option><option value="2">窄低</option>
+        </select>
+      </div>
+      <div class="form-row"><label>眼睛</label>
+        <select id="face-eyes">
+          <option value="0">大而明亮</option><option value="1">细长有神</option><option value="2">圆眼</option><option value="3">三角眼</option>
+        </select>
+      </div>
+      <div class="form-row"><label>鼻子</label>
+        <select id="face-nose">
+          <option value="0">高挺丰隆</option><option value="1">适中端正</option><option value="2">低矮</option>
+        </select>
+      </div>
+      <div class="form-row"><label>嘴巴</label>
+          <select id="face-mouth">
+          <option value="0">唇红齿白</option><option value="1">嘴角上扬</option><option value="2">薄唇</option><option value="3">厚唇</option>
+        </select>
+      </div>
+      <div class="form-row"><label>眉毛</label>
+        <select id="face-brow">
+          <option value="0">浓密顺长</option><option value="1">弯月眉</option><option value="2">剑眉</option><option value="3">淡眉</option>
+        </select>
+      </div>
+      <button class="btn-primary" style="width:100%;margin-top:8px" onclick="doXiangxue()">开始分析</button>
+    </div>
+    <div id="xiangxue-result" style="margin-top:16px"></div>
+  </div>
+</div>
+
+<!-- Qimen Dunjia -->
+
+<div class="page" id="page-qimen">
+  <div class="page-header"><button class="back-btn" onclick="goPage('home')">←</button><h2>🏔 奇门遁甲</h2></div>
+  <div class="section">
+    <div class="card">
+      <div class="form-row"><label>所测之事</label>
+        <select id="qimen-type">
+          <option value="0">事业财运</option><option value="1">感情婚姻</option>
+          <option value="2">健康出行</option><option value="3">学业考试</option>
+          <option value="4">合作谈判</option>
+        </select>
+      </div>
+      <p style="font-size:13px;color:var(--text-muted);margin:8px 0;text-align:center">以当前时辰自动排盘</p>
+      <button class="btn-primary" style="width:100%" onclick="doQimen()">排盘断局</button>
+    </div>
+    <div id="qimen-result" style="margin-top:16px"></div>
+  </div>
+</div>
+
+<!-- Meihua Yishu -->
+
+<div class="page" id="page-meihua">
+  <div class="page-header"><button class="back-btn" onclick="goPage('home')">←</button><h2>🌸 梅花易数</h2></div>
+  <div class="section">
+    <div class="card">
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px">输入数字起卦，或随机起卦</p>
+      <div class="form-row"><label>上卦数</label><input type="number" id="meihua-upper" placeholder="1-8（留空随机）" min="1" max="8"></div>
+      <div class="form-row"><label>下卦数</label><input type="number" id="meihua-lower" placeholder="1-8（留空随机）" min="1" max="8"></div>
+      <div class="form-row"><label>动爻</label><input type="number" id="meihua-dong" placeholder="1-6（留空随机）" min="1" max="6"></div>
+      <button class="btn-primary" style="width:100%;margin-top:8px" onclick="doMeihua()">起卦分析</button>
+    </div>
+    <div id="meihua-result" style="margin-top:16px"></div>
+  </div>
+</div>
+
+<!-- Wuxing Mingli -->
+
+<div class="page" id="page-wuxing">
+  <div class="page-header"><button class="back-btn" onclick="goPage('home')">←</button><h2>☯ 五行命理</h2></div>
+  <div class="section">
+    <div class="card">
+      <div class="form-row"><label>出生年份</label><input type="number" id="wuxing-year" placeholder="如 1990" min="1900" max="2100"></div>
+      <div class="form-row"><label>月份</label><input type="number" id="wuxing-month" placeholder="1-12" min="1" max="12"></div>
+      <div class="form-row"><label>日期</label><input type="number" id="wuxing-day" placeholder="1-31" min="1" max="31"></div>
+      <div class="form-row"><label>时辰</label>
+        <select id="wuxing-hour">
+          <option value="0">子时 (23:00-01:00)</option><option value="1">丑时 (01:00-03:00)</option>
+          <option value="2">寅时 (03:00-05:00)</option><option value="3">卯时 (05:00-07:00)</option>
+          <option value="4">辰时 (07:00-09:00)</option><option value="5">巳时 (09:00-11:00)</option>
+          <option value="6">午时 (11:00-13:00)</option><option value="7">未时 (13:00-15:00)</option>
+          <option value="8">申时 (15:00-17:00)</option><option value="9">酉时 (17:00-19:00)</option>
+          <option value="10">戌时 (19:00-21:00)</option><option value="11">亥时 (21:00-23:00)</option>
+        </select>
+      </div>
+      <button class="btn-primary" style="width:100%;margin-top:8px" onclick="doWuxing()">五行分析</button>
+    </div>
+    <div id="wuxing-result" style="margin-top:16px"></div>
+  </div>
+</div>
+
 <!-- Profile -->
 <div class="page" id="page-profile">
   <div class="page-header"><button class="back-btn" onclick="goPage('home')">←</button><h2>我的</h2></div>
@@ -315,6 +511,7 @@
 
 <script src="js/supabase-config.js"></script>
 <script src="js/cloud.js"></script>
+<script src="js/divination.js"></script>
 <script src="js/knowledge.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/app.js"></script>
