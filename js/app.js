@@ -141,7 +141,7 @@ function doBazi() {
   var maxWx = Math.max(Object.values(bazi.stats).reduce(function(a,b){return Math.max(a,b);},0));
   document.getElementById('bazi-result').innerHTML =
     '<div class="result-area">' +
-      '<div class="card"><h3 style="color:var(--gold);margin-bottom:14px;font-family:\'Noto Serif SC\',serif;font-size:16px">四柱八字</h3>' +
+      '<div class="card"><h3 style="color:var(--gold);margin-bottom:14px;font-family:\'PingFang SC, STSong\',serif;font-size:16px">四柱八字</h3>' +
         '<div class="pillars-grid">' +
           bazi.pillars.map(function(p){return '<div class="pillar-card"><div class="pillar-label">'+p.label+'</div><div class="pillar-stem">'+p.stem+'</div><div class="pillar-branch">'+p.branch+'</div><div class="pillar-wx">'+GAN_WX[p.stem]+' · '+ZHI_WX[p.branch]+'</div></div>';}).join('') +
         '</div>' +
@@ -152,18 +152,18 @@ function doBazi() {
           '<div class="info-item"><div class="info-label">性别</div><div class="info-value">'+(bazi.gender)+'</div></div>' +
         '</div>' +
       '</div>' +
-      '<div class="card" style="margin-top:14px"><h3 style="color:var(--gold);margin-bottom:12px;font-family:\'Noto Serif SC\',serif;font-size:16px">五行统计</h3>' +
+      '<div class="card" style="margin-top:14px"><h3 style="color:var(--gold);margin-bottom:12px;font-family:\'PingFang SC, STSong\',serif;font-size:16px">五行统计</h3>' +
         '<div class="wuxing-bars">' +
           Object.entries(bazi.stats).map(function(e){return '<div class="wx-item"><span class="wx-name wx-'+e[0]+'">'+e[0]+'</span><div class="bar-track"><div class="bar-fill" style="width:'+(e[1]/maxWx*100)+'%;background:'+wxColors[e[0]]+'"></div></div><span style="width:20px;text-align:right;font-size:13px;color:var(--text-secondary)">'+e[1]+'</span></div>';}).join('') +
         '</div>' +
       '</div>' +
-      '<div class="card" style="margin-top:14px"><h3 style="color:var(--gold);margin-bottom:12px;font-family:\'Noto Serif SC\',serif;font-size:16px">命理解读</h3>' +
+      '<div class="card" style="margin-top:14px"><h3 style="color:var(--gold);margin-bottom:12px;font-family:\'PingFang SC, STSong\',serif;font-size:16px">命理解读</h3>' +
         '<div class="reading-block"><div class="reading-title">🎭 性格</div><div class="reading-text">'+reading.personality+'</div></div>' +
         '<div class="reading-block"><div class="reading-title">💼 事业</div><div class="reading-text">'+reading.career+'</div></div>' +
         '<div class="reading-block"><div class="reading-title">💕 感情</div><div class="reading-text">'+reading.love+'</div></div>' +
         '<div class="reading-block"><div class="reading-title">🏥 健康</div><div class="reading-text">'+reading.health+'</div></div>' +
       '</div>' +
-      '<div class="card" style="margin-top:14px"><h3 style="color:var(--gold);margin-bottom:12px;font-family:\'Noto Serif SC\',serif;font-size:16px">大运</h3>' +
+      '<div class="card" style="margin-top:14px"><h3 style="color:var(--gold);margin-bottom:12px;font-family:\'PingFang SC, STSong\',serif;font-size:16px">大运</h3>' +
         '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
           bazi.dayun.map(function(dy){return '<div class="info-item" style="flex:1;min-width:100px;text-align:center"><div class="info-label">'+dy.startAge+'-'+dy.endAge+'岁</div><div class="info-value gold">'+dy.stem+dy.branch+'</div></div>';}).join('') +
         '</div>' +
@@ -183,7 +183,7 @@ function doZhouyi() {
     var html = '<div class="result-area"><div class="card"><div class="gua-display"><div class="gua-name">'+o.full+'</div><div class="gua-ci">「'+o.ci+'」</div><div class="divider"></div><div class="gua-interp">'+o.interp+'</div><div class="gua-tags">'+o.kw.map(function(k){return '<span class="gua-tag">'+k+'</span>';}).join('')+'</div></div></div>';
     if (result.changed) {
       var c = result.changed;
-      html += '<div class="card" style="margin-top:14px"><h3 style="color:var(--gold);margin-bottom:10px;font-family:\'Noto Serif SC\',serif;font-size:16px">变卦</h3><div class="gua-display"><div class="gua-name">'+c.full+'</div><div class="gua-ci">「'+c.ci+'」</div><div class="divider"></div><div class="gua-interp">'+c.interp+'</div></div></div>';
+      html += '<div class="card" style="margin-top:14px"><h3 style="color:var(--gold);margin-bottom:10px;font-family:\'PingFang SC, STSong\',serif;font-size:16px">变卦</h3><div class="gua-display"><div class="gua-name">'+c.full+'</div><div class="gua-ci">「'+c.ci+'」</div><div class="divider"></div><div class="gua-interp">'+c.interp+'</div></div></div>';
     }
     html += '</div>';
     document.getElementById('zhouyi-result').innerHTML = html;
@@ -214,7 +214,7 @@ function doTarot() {
     var cards = drawTarotCards(spread);
     addHistory('tarot', spread.name + ' · ' + cards.map(function(c){return c.card.name;}).join(' / '));
     document.getElementById('tarot-result').innerHTML =
-      '<div class="result-area"><div class="card"><h3 style="color:var(--gold);margin-bottom:16px;font-family:\'Noto Serif SC\',serif;font-size:16px">'+spread.name+'解读</h3>' +
+      '<div class="result-area"><div class="card"><h3 style="color:var(--gold);margin-bottom:16px;font-family:\'PingFang SC, STSong\',serif;font-size:16px">'+spread.name+'解读</h3>' +
         '<div class="tarot-cards">' +
           cards.map(function(c) {
             return '<div class="tarot-card '+(c.isReversed?'reversed':'')+'"><div class="tarot-card-inner"><div class="tarot-position">'+c.position+'</div><div class="tarot-name">'+c.card.name+'</div><span class="tarot-dir '+(c.isReversed?'rev':'up')+'">'+(c.isReversed?'逆位':'正位')+'</span><div class="tarot-meaning">'+(c.isReversed?c.card.rev:c.card.up)+'</div></div></div>';
@@ -256,8 +256,8 @@ function doZodiac() {
     { icon: '🏃', label: '健康', val: f.health, color: '#00b894' }
   ];
   document.getElementById('zodiac-result').innerHTML =
-    '<div class="result-area"><div class="card"><h3 style="color:var(--gold);margin-bottom:16px;font-family:\'Noto Serif SC\',serif;font-size:16px">'+s.name+'今日运势</h3>' +
-      '<div style="text-align:center;margin-bottom:20px"><span style="font-size:56px;font-weight:900;color:var(--gold);font-family:\'Noto Serif SC\',serif">'+f.overall+'</span><span style="font-size:14px;color:var(--text-muted)">/100</span></div>' +
+    '<div class="result-area"><div class="card"><h3 style="color:var(--gold);margin-bottom:16px;font-family:\'PingFang SC, STSong\',serif;font-size:16px">'+s.name+'今日运势</h3>' +
+      '<div style="text-align:center;margin-bottom:20px"><span style="font-size:56px;font-weight:900;color:var(--gold);font-family:\'PingFang SC, STSong\',serif">'+f.overall+'</span><span style="font-size:14px;color:var(--text-muted)">/100</span></div>' +
       '<div class="bar-group">' + bars.map(function(b){return '<div class="bar-item"><span class="bar-icon">'+b.icon+'</span><span class="bar-label">'+b.label+'</span><div class="bar-track"><div class="bar-fill" style="width:'+b.val+'%;background:'+b.color+'"></div></div><span class="bar-value">'+b.val+'</span></div>';}).join('') + '</div>' +
       '<div class="divider"></div>' +
       '<div class="reading-block"><div class="reading-title">📊 运势概述</div><div class="reading-text">'+f.summary+'</div></div>' +
@@ -281,12 +281,12 @@ function doName() {
   ];
   document.getElementById('name-result').innerHTML =
     '<div class="result-area">' +
-      '<div class="card" style="text-align:center"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">姓名评分</div><div style="font-size:64px;font-weight:900;color:var(--gold);font-family:\'Noto Serif SC\',serif">'+result.score+'</div><div style="font-size:12px;color:var(--text-muted);margin-top:2px">满分 99</div></div>' +
-      '<div class="card" style="margin-top:14px"><h3 style="color:var(--gold);margin-bottom:10px;font-family:\'Noto Serif SC\',serif;font-size:16px">五格分析</h3>' +
+      '<div class="card" style="text-align:center"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">姓名评分</div><div style="font-size:64px;font-weight:900;color:var(--gold);font-family:\'PingFang SC, STSong\',serif">'+result.score+'</div><div style="font-size:12px;color:var(--text-muted);margin-top:2px">满分 99</div></div>' +
+      '<div class="card" style="margin-top:14px"><h3 style="color:var(--gold);margin-bottom:10px;font-family:\'PingFang SC, STSong\',serif;font-size:16px">五格分析</h3>' +
         '<table class="ge-table"><thead><tr><th>格局</th><th>数理</th><th>五行</th><th>吉凶</th></tr></thead><tbody>' +
           ges.map(function(g){return '<tr><td>'+g.label+'</td><td class="ge-num">'+g.ge.num+'</td><td>'+g.ge.wx+'</td><td><span class="ge-luck '+(g.ge.luck==='大吉'||g.ge.luck==='吉'?'good':'bad')+'">'+g.ge.luck+'</span></td></tr>';}).join('') +
         '</tbody></table></div>' +
-      '<div class="card" style="margin-top:14px"><h3 style="color:var(--gold);margin-bottom:8px;font-family:\'Noto Serif SC\',serif;font-size:16px">解读</h3><div class="reading-text">' +
+      '<div class="card" style="margin-top:14px"><h3 style="color:var(--gold);margin-bottom:8px;font-family:\'PingFang SC, STSong\',serif;font-size:16px">解读</h3><div class="reading-text">' +
         (result.score>=90?'此名五格配置极佳。':result.score>=80?'此名五格配置良好。':result.score>=70?'此名格局尚可。':'此名五格配置一般。') +
         ' 人格（'+result.renGe.num+'）五行属'+result.renGe.wx+'，'+(result.renGe.luck==='大吉'?'大吉大利。':result.renGe.luck==='吉'?'吉利。':'需注意。') +
         ' 总格（'+result.zongGe.num+'）五行属'+result.zongGe.wx+'，'+(result.zongGe.luck==='大吉'?'主晚年亨通。':result.zongGe.luck==='吉'?'主中晚年安稳。':'需多加注意。') +
@@ -301,19 +301,19 @@ function doFengShui() {
   addHistory('fengshui', result.kua + '卦 · ' + result.group + ' · 生气方' + result.sq);
   document.getElementById('fs-result').innerHTML =
     '<div class="result-area">' +
-      '<div class="card"><h3 style="color:var(--gold);margin-bottom:12px;font-family:\'Noto Serif SC\',serif;font-size:16px">命卦信息</h3><div class="info-grid"><div class="info-item"><div class="info-label">命卦数</div><div class="info-value gold">'+result.kua+'</div></div><div class="info-item"><div class="info-label">命属</div><div class="info-value">'+result.group+'</div></div></div></div>' +
-      '<div class="card" style="margin-top:14px"><h3 style="color:var(--accent-green);margin-bottom:10px;font-family:\'Noto Serif SC\',serif;font-size:16px">✨ 吉方</h3><div class="dir-grid">' +
+      '<div class="card"><h3 style="color:var(--gold);margin-bottom:12px;font-family:\'PingFang SC, STSong\',serif;font-size:16px">命卦信息</h3><div class="info-grid"><div class="info-item"><div class="info-label">命卦数</div><div class="info-value gold">'+result.kua+'</div></div><div class="info-item"><div class="info-label">命属</div><div class="info-value">'+result.group+'</div></div></div></div>' +
+      '<div class="card" style="margin-top:14px"><h3 style="color:var(--accent-green);margin-bottom:10px;font-family:\'PingFang SC, STSong\',serif;font-size:16px">✨ 吉方</h3><div class="dir-grid">' +
         '<div class="dir-card good"><div class="dir-name">生气方</div><div class="dir-val">'+result.sq+'</div><div class="dir-desc">最吉利，利事业财运</div></div>' +
         '<div class="dir-card good"><div class="dir-name">天医方</div><div class="dir-val">'+result.ty+'</div><div class="dir-desc">利健康</div></div>' +
         '<div class="dir-card good"><div class="dir-name">延年方</div><div class="dir-val">'+result.yn+'</div><div class="dir-desc">利感情婚姻</div></div>' +
       '</div></div>' +
-      '<div class="card" style="margin-top:14px"><h3 style="color:var(--accent-red);margin-bottom:10px;font-family:\'Noto Serif SC\',serif;font-size:16px">⚠️ 凶方</h3><div class="dir-grid">' +
+      '<div class="card" style="margin-top:14px"><h3 style="color:var(--accent-red);margin-bottom:10px;font-family:\'PingFang SC, STSong\',serif;font-size:16px">⚠️ 凶方</h3><div class="dir-grid">' +
         '<div class="dir-card bad"><div class="dir-name">祸害方</div><div class="dir-val">'+result.hh+'</div></div>' +
         '<div class="dir-card bad"><div class="dir-name">六煞方</div><div class="dir-val">'+result.ls+'</div></div>' +
         '<div class="dir-card bad"><div class="dir-name">五鬼方</div><div class="dir-val">'+result.wg+'</div></div>' +
         '<div class="dir-card bad"><div class="dir-name">绝命方</div><div class="dir-val">'+result.jm+'</div></div>' +
       '</div></div>' +
-      '<div class="card" style="margin-top:14px"><h3 style="color:var(--gold);margin-bottom:8px;font-family:\'Noto Serif SC\',serif;font-size:16px">🏠 布局建议</h3><div class="reading-text">' +
+      '<div class="card" style="margin-top:14px"><h3 style="color:var(--gold);margin-bottom:8px;font-family:\'PingFang SC, STSong\',serif;font-size:16px">🏠 布局建议</h3><div class="reading-text">' +
         '你属于<strong style="color:var(--gold)">'+result.group+'</strong>。<br><br>🛏️ 卧室宜朝向生气方（'+result.sq+'）或延年方（'+result.yn+'）。<br>📖 书房宜在生气方（'+result.sq+'）。<br>🍳 厨房宜在天医方（'+result.ty+'）。<br>🚿 卫生间宜在绝命方（'+result.jm+'）。<br>🚪 大门宜朝向生气方（'+result.sq+'）。' +
       '</div></div></div>';
 }
@@ -326,7 +326,7 @@ function doLifePath() {
   var result = lifePath(parts[0], parts[1], parts[2]);
   addHistory('numerology', '生命灵数 ' + result.num);
   document.getElementById('num-result').innerHTML =
-    '<div class="result-area"><div class="card"><h3 style="color:var(--gold);margin-bottom:14px;font-family:\'Noto Serif SC\',serif;font-size:16px">你的生命灵数</h3>' +
+    '<div class="result-area"><div class="card"><h3 style="color:var(--gold);margin-bottom:14px;font-family:\'PingFang SC, STSong\',serif;font-size:16px">你的生命灵数</h3>' +
       '<div class="life-path-display"><div class="life-num">'+result.num+'</div><div><div style="font-size:12px;color:var(--text-muted);margin-bottom:2px">生命灵数</div><div style="font-size:16px;font-weight:600">'+(result.num<=9?['','领导','调解','创造','建设','冒险','照顾','思考','商业','理想'][result.num]||'大师'):result.num===11?'灵性导师':result.num===22?'建造大师':'治愈大师')+'</div></div></div>' +
       '<div class="reading-block"><div class="reading-title">📖 灵数含义</div><div class="reading-text">'+result.meaning+'</div></div></div></div>';
 }
@@ -344,8 +344,8 @@ function doNumberAnalysis() {
   addHistory('numerology', '号码分析 · 主数' + main);
   document.getElementById('num-result').innerHTML =
     '<div class="result-area">' +
-      '<div class="card" style="text-align:center"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">号码能量评分</div><div style="font-size:64px;font-weight:900;color:var(--gold);font-family:\'Noto Serif SC\',serif">'+score+'</div><div style="font-size:12px;color:var(--text-muted);margin-top:2px">五行属'+(wxMap[main]||'土')+' · 主数'+main+'</div></div>' +
-      '<div class="card" style="margin-top:14px"><h3 style="color:var(--gold);margin-bottom:8px;font-family:\'Noto Serif SC\',serif;font-size:16px">分析详情</h3><div class="reading-text">' +
+      '<div class="card" style="text-align:center"><div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">号码能量评分</div><div style="font-size:64px;font-weight:900;color:var(--gold);font-family:\'PingFang SC, STSong\',serif">'+score+'</div><div style="font-size:12px;color:var(--text-muted);margin-top:2px">五行属'+(wxMap[main]||'土')+' · 主数'+main+'</div></div>' +
+      '<div class="card" style="margin-top:14px"><h3 style="color:var(--gold);margin-bottom:8px;font-family:\'PingFang SC, STSong\',serif;font-size:16px">分析详情</h3><div class="reading-text">' +
         (score>=85?'此号码能量极强。':score>=75?'此号码能量较好。':score>=65?'此号码能量一般。':'此号码能量偏弱。') +
         '<br><br>📊 数字总和：'+sum+'<br>🔢 主数：'+main+'（五行'+(wxMap[main]||'土')+'）<br>' +
         (!hasRepeat?'✅ 号码无重复数字，能量纯粹。':'⚠️ 号码存在重复数字。') +
@@ -418,7 +418,7 @@ function doLogout(){state.currentUser=null;clearSession();updateUI();goPage('hom
 
 function showToast(msg){
   var t=document.getElementById('toast');
-  if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-16px);z-index:300;padding:8px 20px;border-radius:10px;background:rgba(26,26,62,0.95);border:1px solid rgba(201,169,110,0.3);color:#e8d5a8;font-size:13px;opacity:0;transition:all 0.3s;pointer-events:none;white-space:nowrap;font-family:"Noto Sans SC",sans-serif;';document.body.appendChild(t);}
+  if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-16px);z-index:300;padding:8px 20px;border-radius:10px;background:rgba(26,26,62,0.95);border:1px solid rgba(201,169,110,0.3);color:#e8d5a8;font-size:13px;opacity:0;transition:all 0.3s;pointer-events:none;white-space:nowrap;font-family:"PingFang SC",sans-serif;';document.body.appendChild(t);}
   t.textContent=msg;t.style.opacity='1';t.style.transform='translateX(-50%) translateY(0)';
   clearTimeout(t._timer);t._timer=setTimeout(function(){t.style.opacity='0';t.style.transform='translateX(-50%) translateY(-16px)';},2000);
 }
@@ -437,7 +437,7 @@ function renderProfile(){
   else{
     var icons={bazi:'🔮',zhouyi:'☯',tarot:'🃏',zodiac:'♈',name:'✍',fengshui:'🧭',numerology:'🔢'};
     var names={bazi:'八字排盘',zhouyi:'周易占卜',tarot:'塔罗牌',zodiac:'星座运势',name:'姓名测算',fengshui:'风水罗盘',numerology:'数字能量'};
-    listEl.innerHTML='<h3 style="color:var(--gold);margin-bottom:10px;font-family:\'Noto Serif SC\',serif;font-size:16px">测算记录</h3>'+
+    listEl.innerHTML='<h3 style="color:var(--gold);margin-bottom:10px;font-family:\'PingFang SC, STSong\',serif;font-size:16px">测算记录</h3>'+
       history.slice().reverse().map(function(h){
         var time=new Date(h.time).toLocaleString('zh-CN',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
         return '<div class="history-item"><div class="history-icon">'+(icons[h.type]||'🔮')+'</div><div class="history-info"><div class="history-title">'+(names[h.type]||h.type)+'</div><div class="history-detail">'+(h.detail||'')+'</div></div><div class="history-time">'+time+'</div></div>';

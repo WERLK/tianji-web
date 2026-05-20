@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
-
 :root {
   --bg-primary: #0a0a1a;
   --bg-card: #1a1a3e;
@@ -27,7 +25,7 @@
 html { -webkit-text-size-adjust: 100%; }
 
 body {
-  font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
   background: var(--bg-primary);
   color: var(--text-primary);
   height: 100vh; height: 100dvh;
@@ -51,7 +49,7 @@ body {
   padding-left: 20px; padding-right: 20px;
 }
 .nav-logo {
-  font-family: 'Noto Serif SC', serif;
+  font-family: 'PingFang SC', 'STSong', 'SimSun', serif;
   font-size: 20px; font-weight: 900;
   color: var(--gold); letter-spacing: 3px;
 }
@@ -96,7 +94,7 @@ body {
   border-bottom: 1px solid var(--border);
 }
 .page-header h2 {
-  font-family: 'Noto Serif SC', serif;
+  font-family: 'PingFang SC', 'STSong', 'SimSun', serif;
   font-size: 18px; font-weight: 700;
   color: var(--gold);
 }
@@ -126,7 +124,7 @@ body {
   margin-bottom: 20px; background: rgba(201,169,110,0.05);
 }
 .hero-title {
-  font-family: 'Noto Serif SC', serif;
+  font-family: 'PingFang SC', 'STSong', 'SimSun', serif;
   font-size: clamp(42px, 10vw, 72px);
   font-weight: 900; color: var(--gold);
   letter-spacing: 8px; line-height: 1.2;
@@ -281,7 +279,7 @@ select.form-input {
 }
 .auth-header { text-align: center; margin-bottom: 20px; }
 .auth-icon { font-size: 36px; margin-bottom: 6px; }
-.auth-title { font-family: 'Noto Serif SC', serif; font-size: 20px; font-weight: 700; color: var(--gold); margin-bottom: 2px; }
+.auth-title { font-family: 'PingFang SC', 'STSong', serif; font-size: 20px; font-weight: 700; color: var(--gold); margin-bottom: 2px; }
 .auth-desc { font-size: 12px; color: var(--text-muted); }
 .auth-error { min-height: 18px; font-size: 12px; color: var(--accent-red); text-align: center; margin-bottom: 4px; }
 .auth-switch { text-align: center; margin-top: 14px; font-size: 12px; color: var(--text-muted); }
@@ -337,8 +335,8 @@ select.form-input {
 .pillars-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
 .pillar-card { text-align: center; padding: 12px 6px; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid var(--border); }
 .pillar-label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
-.pillar-stem { font-family: 'Noto Serif SC', serif; font-size: 26px; font-weight: 900; color: var(--gold); }
-.pillar-branch { font-family: 'Noto Serif SC', serif; font-size: 26px; font-weight: 900; margin-top: 1px; }
+.pillar-stem { font-family: 'PingFang SC', 'STSong', serif; font-size: 26px; font-weight: 900; color: var(--gold); }
+.pillar-branch { font-family: 'PingFang SC', 'STSong', serif; font-size: 26px; font-weight: 900; margin-top: 1px; }
 .pillar-wx { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
 
 .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -361,7 +359,7 @@ select.form-input {
 
 .fortune-grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
 .fortune-score { text-align: center; padding: 24px 16px; }
-.score-number { font-family: 'Noto Serif SC', serif; font-size: 64px; font-weight: 900; color: var(--gold); text-shadow: 0 0 30px rgba(201,169,110,0.3); line-height: 1; }
+.score-number { font-family: 'PingFang SC', 'STSong', serif; font-size: 64px; font-weight: 900; color: var(--gold); text-shadow: 0 0 30px rgba(201,169,110,0.3); line-height: 1; }
 .score-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
 .score-summary { font-size: 14px; color: var(--text-secondary); margin-top: 12px; line-height: 1.7; }
 .bar-group { display: flex; flex-direction: column; gap: 12px; }
@@ -385,7 +383,7 @@ select.form-input {
 .lucky-value { display: block; font-size: 13px; font-weight: 600; color: var(--gold); margin-top: 1px; }
 
 .gua-display { text-align: center; padding: 24px 16px; }
-.gua-name { font-family: 'Noto Serif SC', serif; font-size: 30px; font-weight: 900; color: var(--gold); margin-bottom: 6px; }
+.gua-name { font-family: 'PingFang SC', 'STSong', serif; font-size: 30px; font-weight: 900; color: var(--gold); margin-bottom: 6px; }
 .gua-ci { font-size: 14px; color: var(--text-secondary); font-style: italic; margin-bottom: 16px; }
 .gua-interp { font-size: 14px; color: var(--text-primary); line-height: 1.7; }
 .gua-tags { display: flex; justify-content: center; gap: 6px; margin-top: 14px; flex-wrap: wrap; }
@@ -415,7 +413,7 @@ select.form-input {
 .tarot-card.reversed .tarot-card-inner { transform: rotate(-180deg); }
 .tarot-card-inner { transition: transform 0.3s; }
 .tarot-position { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
-.tarot-name { font-family: 'Noto Serif SC', serif; font-size: 18px; font-weight: 700; color: var(--gold); margin-bottom: 3px; }
+.tarot-name { font-family: 'PingFang SC', 'STSong', serif; font-size: 18px; font-weight: 700; color: var(--gold); margin-bottom: 3px; }
 .tarot-dir { display: inline-block; padding: 2px 10px; border-radius: 6px; font-size: 11px; margin-bottom: 8px; }
 .tarot-dir.up { background: rgba(0,184,148,0.15); color: var(--accent-green); }
 .tarot-dir.rev { background: rgba(225,112,85,0.15); color: var(--accent-red); }
@@ -453,7 +451,7 @@ select.form-input {
 .dir-desc { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 
 .life-path-display { display: flex; align-items: center; gap: 20px; padding: 20px; background: rgba(201,169,110,0.05); border-radius: var(--radius); margin-bottom: 16px; }
-.life-num { font-family: 'Noto Serif SC', serif; font-size: 56px; font-weight: 900; color: var(--gold); text-shadow: 0 0 24px rgba(201,169,110,0.3); line-height: 1; }
+.life-num { font-family: 'PingFang SC', 'STSong', serif; font-size: 56px; font-weight: 900; color: var(--gold); text-shadow: 0 0 24px rgba(201,169,110,0.3); line-height: 1; }
 
 .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px; gap: 12px; }
 .loading-emoji { font-size: 40px; }
