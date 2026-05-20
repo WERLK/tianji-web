@@ -17,11 +17,12 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
   }
-  // 检查自定义重置 token (#reset=xxx)
-  var resetMatch = hash.match(/^#reset=(.+)$/);
-  if (resetMatch) {
-    window.location.hash = '';
-    showResetPasswordPage(null, resetMatch[1]);
+  // 检查自定义重置 token (?reset=xxx)
+  var urlParams = new URLSearchParams(window.location.search);
+  var resetToken = urlParams.get('reset');
+  if (resetToken) {
+    window.history.replaceState(null, '', window.location.pathname);
+    showResetPasswordPage(null, resetToken);
     return;
   }
   // 先检查是否有 OAuth 回调

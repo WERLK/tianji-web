@@ -431,7 +431,7 @@ var Cloud = (function() {
         })
         .then(function(p) {
           // 4. 用 Resend 发邮件
-          var resetUrl = window.location.origin + window.location.pathname + '#reset=' + token;
+          var resetUrl = window.location.origin + window.location.pathname + '?reset=' + token;
           var resendKey = (typeof RESEND_KEY !== 'undefined') ? RESEND_KEY : '';
           var host = window.location.hostname;
           var fromAddr = (host === 'localhost' || host === '127.0.0.1') ? 'onboarding@resend.dev' : 'noreply@' + host;
