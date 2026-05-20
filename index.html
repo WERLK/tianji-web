@@ -79,14 +79,13 @@
       </div>
     </div>
 
-    <div class="card" style="margin-top:20px;padding:16px">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-        <span style="font-size:20px">📚</span>
-        <span style="font-weight:600;color:var(--gold)">命理知识库</span>
+    <div class="section" style="margin-top:8px">
+      <div style="font-size:14px;font-weight:600;color:var(--gold);margin-bottom:12px;display:flex;align-items:center;gap:6px">
+        <span>📚</span> 命理知识库
       </div>
-      <p style="font-size:13px;color:var(--text-muted);line-height:1.7">阴阳五行、天干地支、八字命理、紫微斗数、六爻占卜、面相手相……系统学习命理学知识。</p>
-      <button class="btn-primary" style="margin-top:12px;width:100%" onclick="goPage('knowledge')">进入知识库 →</button>
+      <div class="module-grid" id="knowledge-grid"></div>
     </div>
+
   </div>
 </div>
 
@@ -212,17 +211,9 @@
   </div>
 </div>
 
-<!-- Knowledge -->
-<div class="page" id="page-knowledge">
-  <div class="page-header"><button class="back-btn" onclick="goPage('home')">←</button><h2>📚 命理知识库</h2></div>
-  <div class="section">
-    <div id="knowledge-list"></div>
-  </div>
-</div>
-
 <!-- Knowledge Detail -->
 <div class="page" id="page-knowledge-detail">
-  <div class="page-header"><button class="back-btn" id="knowledge-back-btn" onclick="goPage('knowledge')">←</button><h2 id="knowledge-detail-title"></h2></div>
+  <div class="page-header"><button class="back-btn" id="knowledge-back-btn" onclick="goPage('home')">←</button><h2 id="knowledge-detail-title"></h2></div>
   <div class="section"><div id="knowledge-detail-content"></div></div>
 </div>
 

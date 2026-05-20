@@ -529,17 +529,6 @@ body {
 .history-time { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
 
 /* ===== Knowledge ===== */
-.knowledge-category {
-  padding: 16px; margin-bottom: 10px;
-  background: var(--bg-card); border: 1px solid var(--border-light);
-  border-radius: var(--radius); cursor: pointer;
-  transition: all 0.2s;
-}
-.knowledge-category:active { transform: scale(0.98); background: var(--bg-card-hover); }
-.knowledge-cat-header { display: flex; align-items: center; gap: 12px; }
-.knowledge-cat-icon { font-size: 28px; }
-.knowledge-cat-title { font-size: 16px; font-weight: 700; color: var(--gold); }
-.knowledge-cat-desc { font-size: 12px; color: var(--text-muted); margin-left: 40px; margin-top: 4px; }
 .knowledge-section { margin-bottom: 20px; }
 .knowledge-section-title {
   font-size: 15px; font-weight: 700; color: var(--gold);

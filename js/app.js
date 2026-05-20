@@ -622,17 +622,15 @@ var knowledgeDescs = {
 };
 
 function renderKnowledgeList() {
-  var el = document.getElementById('knowledge-list');
+  var el = document.getElementById('knowledge-grid');
   if (!el || typeof KNOWLEDGE === 'undefined') return;
   var keys = Object.keys(KNOWLEDGE);
   el.innerHTML = keys.map(function(key) {
     var k = KNOWLEDGE[key];
-    return '<div class="knowledge-category" onclick="showKnowledge(\'' + key + '\')">' +
-      '<div class="knowledge-cat-header">' +
-        '<div class="knowledge-cat-icon">' + k.icon + '</div>' +
-        '<div class="knowledge-cat-title">' + k.title + '</div>' +
-      '</div>' +
-      '<div class="knowledge-cat-desc">' + (knowledgeDescs[key] || '') + '</div>' +
+    return '<div class="module-card" onclick="showKnowledge(\'' + key + '\')">' +
+      '<div class="module-icon">' + k.icon + '</div>' +
+      '<div class="module-name">' + k.title + '</div>' +
+      '<div class="module-desc">' + (knowledgeDescs[key] || '') + '</div>' +
     '</div>';
   }).join('');
 }
@@ -659,6 +657,5 @@ function showKnowledge(key) {
     '</div>';
   }
   document.getElementById('knowledge-detail-content').innerHTML = content;
-  document.getElementById('knowledge-back-btn').setAttribute('onclick', "goPage('" + (state.currentPage === 'knowledge' ? 'knowledge' : state.currentPage) + "')");
   goPage('knowledge-detail');
 }
