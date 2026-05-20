@@ -396,7 +396,7 @@ function switchLoginTab(tab) {
   var tabs = document.querySelectorAll('#loginPanel .auth-tab');
   var contents = document.querySelectorAll('#loginPanel .auth-tab-content');
   for (var i = 0; i < tabs.length; i++) {
-    tabs[i].classList.toggle('active', tabs[i].textContent.indexOf(tab === 'username' ? '用户名' : tab === 'phone' ? '手机号' : '邮箱') >= 0);
+    tabs[i].classList.toggle('active', tabs[i].textContent.indexOf(tab === 'username' ? '用户名' : '邮箱') >= 0);
   }
   for (var j = 0; j < contents.length; j++) {
     contents[j].classList.toggle('active', contents[j].id === 'loginTab-' + tab);
@@ -407,49 +407,11 @@ function switchRegTab(tab) {
   var tabs = document.querySelectorAll('#registerPanel .auth-tab');
   var contents = document.querySelectorAll('#registerPanel .auth-tab-content');
   for (var i = 0; i < tabs.length; i++) {
-    tabs[i].classList.toggle('active', tabs[i].textContent.indexOf(tab === 'username' ? '用户名' : tab === 'phone' ? '手机号' : '邮箱') >= 0);
+    tabs[i].classList.toggle('active', tabs[i].textContent.indexOf(tab === 'username' ? '用户名' : '邮箱') >= 0);
   }
   for (var j = 0; j < contents.length; j++) {
     contents[j].classList.toggle('active', contents[j].id === 'regTab-' + tab);
   }
-}
-
-// Send verification code
-function sendCode(type) {
-  var contact, btnId;
-  if (type === 'phone') {
-    contact = document.getElementById('regPhone').value.trim();
-    btnId = 'phoneCodeBtn';
-    if (!/^1\d{10}$/.test(contact)) { document.getElementById('regError').textContent = '请输入正确的手机号'; return; }
-  } else {
-    contact = document.getElementById('regEmail').value.trim();
-    btnId = 'emailCodeBtn';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact)) { document.getElementById('regError').textContent = '请输入正确的邮箱'; return; }
-  }
-  var btn = document.getElementById(btnId);
-  btn.classList.add('disabled');
-  btn.textContent = '发送中...';
-
-  Cloud.requestSmsCode(contact, function(err, demoCode) {
-    if (err) {
-      document.getElementById('regError').textContent = err;
-      btn.textContent = '获取验证码';
-      btn.classList.remove('disabled');
-      return;
-    }
-    if (demoCode) {
-      showToast('验证码：' + demoCode + '（演示模式）');
-    } else {
-      showToast('验证码已发送');
-    }
-    var sec = 60;
-    btn.textContent = sec + 's';
-    var timer = setInterval(function() {
-      sec--;
-      btn.textContent = sec + 's';
-      if (sec <= 0) { clearInterval(timer); btn.textContent = '获取验证码'; btn.classList.remove('disabled'); }
-    }, 1000);
-  });
 }
 
 // Social login
@@ -462,7 +424,6 @@ function doSocialLogin(platform) {
   }
 
   Cloud.socialLogin(platform, function(err, user) {
-    // Reset buttons
     setTimeout(function() {
       var allBtns = document.querySelectorAll('.social-btn.' + platform);
       for (var i = 0; i < allBtns.length; i++) {
@@ -510,30 +471,17 @@ function doRegister() {
       showToast('注册成功，欢迎 ' + (user.nick || user.username) + '！');
     });
 
-  } else if (_regTab === 'phone') {
-    var phone = document.getElementById('regPhone').value.trim();
-    var code = document.getElementById('regPhoneCode').value.trim();
-    var pass = document.getElementById('regPhonePass').value;
-    if (!/^1\d{10}$/.test(phone)) { errEl.textContent = '请输入正确的手机号'; return; }
-    if (code.length !== 6) { errEl.textContent = '请输入6位验证码'; return; }
-    if (pass.length < 6) { errEl.textContent = '密码至少6位'; return; }
-    Cloud.signUpOrLogInWithCode(phone, code, function(err, user) {
-      if (err) { errEl.textContent = err; return; }
-      state.currentUser = user; updateUI(); closeAuth();
-      showToast('注册成功！');
-    });
-
   } else if (_regTab === 'email') {
     var email = document.getElementById('regEmail').value.trim();
-    var code = document.getElementById('regEmailCode').value.trim();
     var pass = document.getElementById('regEmailPass').value;
+    var pass2 = document.getElementById('regEmailPass2').value;
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errEl.textContent = '请输入正确的邮箱'; return; }
-    if (code.length !== 6) { errEl.textContent = '请输入6位验证码'; return; }
     if (pass.length < 6) { errEl.textContent = '密码至少6位'; return; }
-    Cloud.signUpOrLogInWithCode(email, code, function(err, user) {
+    if (pass !== pass2) { errEl.textContent = '两次密码不一致'; return; }
+    Cloud.signUp(email, pass, { nick: email.split('@')[0] }, function(err, user) {
       if (err) { errEl.textContent = err; return; }
       state.currentUser = user; updateUI(); closeAuth();
-      showToast('注册成功！');
+      showToast('注册成功，欢迎！');
     });
   }
 }
@@ -552,17 +500,6 @@ function doLogin() {
       if (err) { errEl.textContent = err; return; }
       state.currentUser = user; updateUI(); closeAuth();
       showToast('欢迎回来，' + (user.nick || user.username) + '！');
-    });
-
-  } else if (_loginTab === 'phone') {
-    var phone = document.getElementById('loginPhone').value.trim();
-    var pass = document.getElementById('loginPhonePass').value;
-    if (!phone) { errEl.textContent = '请输入手机号'; return; }
-    if (!pass) { errEl.textContent = '请输入密码'; return; }
-    Cloud.logInByPhone(phone, pass, function(err, user) {
-      if (err) { errEl.textContent = err; return; }
-      state.currentUser = user; updateUI(); closeAuth();
-      showToast('欢迎回来！');
     });
 
   } else if (_loginTab === 'email') {

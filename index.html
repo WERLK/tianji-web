@@ -247,16 +247,11 @@
     <div id="loginPanel">
       <div class="auth-tabs">
         <button class="auth-tab active" onclick="switchLoginTab('username')">用户名</button>
-        <button class="auth-tab" onclick="switchLoginTab('phone')">手机号</button>
         <button class="auth-tab" onclick="switchLoginTab('email')">邮箱</button>
       </div>
       <div class="auth-tab-content active" id="loginTab-username">
         <input class="auth-input" id="loginUser" placeholder="用户名">
         <input class="auth-input" id="loginPass" type="password" placeholder="密码">
-      </div>
-      <div class="auth-tab-content" id="loginTab-phone">
-        <input class="auth-input" id="loginPhone" placeholder="手机号" inputmode="tel">
-        <input class="auth-input" id="loginPhonePass" type="password" placeholder="密码">
       </div>
       <div class="auth-tab-content" id="loginTab-email">
         <input class="auth-input" id="loginEmail" placeholder="邮箱">
@@ -270,9 +265,8 @@
     <!-- Register Panel -->
     <div id="registerPanel" style="display:none">
       <div class="auth-tabs">
-        <button class="auth-tab active" onclick="switchRegTab('username')">用户名</button>
-        <button class="auth-tab" onclick="switchRegTab('phone')">手机号</button>
-        <button class="auth-tab" onclick="switchRegTab('email')">邮箱</button>
+        <button class="auth-tab active" onclick="switchRegTab('username')">用户名注册</button>
+        <button class="auth-tab" onclick="switchRegTab('email')">邮箱注册</button>
       </div>
       <div class="auth-tab-content active" id="regTab-username">
         <input class="auth-input" id="regUser" placeholder="用户名（2-16字符）">
@@ -280,21 +274,10 @@
         <input class="auth-input" id="regPass" type="password" placeholder="密码（至少6位）">
         <input class="auth-input" id="regPass2" type="password" placeholder="确认密码">
       </div>
-      <div class="auth-tab-content" id="regTab-phone">
-        <div class="auth-row">
-          <input class="auth-input flex1" id="regPhone" placeholder="手机号" inputmode="tel">
-          <button class="btn-code" id="phoneCodeBtn" onclick="sendCode('phone')">获取验证码</button>
-        </div>
-        <input class="auth-input" id="regPhoneCode" placeholder="验证码" inputmode="numeric" maxlength="6">
-        <input class="auth-input" id="regPhonePass" type="password" placeholder="设置密码（至少6位）">
-      </div>
       <div class="auth-tab-content" id="regTab-email">
-        <div class="auth-row">
-          <input class="auth-input flex1" id="regEmail" placeholder="邮箱">
-          <button class="btn-code" id="emailCodeBtn" onclick="sendCode('email')">获取验证码</button>
-        </div>
-        <input class="auth-input" id="regEmailCode" placeholder="验证码" inputmode="numeric" maxlength="6">
+        <input class="auth-input" id="regEmail" placeholder="邮箱地址">
         <input class="auth-input" id="regEmailPass" type="password" placeholder="设置密码（至少6位）">
+        <input class="auth-input" id="regEmailPass2" type="password" placeholder="确认密码">
       </div>
       <div class="auth-error" id="regError"></div>
       <button class="btn-primary" style="width:100%" onclick="doRegister()">注册</button>
