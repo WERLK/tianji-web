@@ -409,17 +409,20 @@ var Cloud = (function() {
   function resetPassword(email, cb) {
     onReady(function() {
       if (!isCloud()) { cb('本地模式不支持密码重置'); return; }
+      var done = false;
+      function finish(err) { if (!done) { done = true; cb(err); } }
+
       // 1. 查找用户 profile
       _restGet('user_profiles', '?select=id,nick,email&email=eq.' + encodeURIComponent(email))
         .then(function(profiles) {
-          if (!profiles || profiles.length === 0) {
+          if (!Array.isArray(profiles) || profiles.length === 0) {
             var uname = email.split('@')[0];
             return _restGet('user_profiles', '?select=id,nick,email&nick=eq.' + encodeURIComponent(uname));
           }
           return profiles;
         })
         .then(function(profiles) {
-          if (!profiles || profiles.length === 0) { cb('该邮箱未注册'); return; }
+          if (!Array.isArray(profiles) || profiles.length === 0) { finish('该邮箱未注册'); return; }
           var p = profiles[0];
           // 2. 生成一次性 token 并存储
           var token = 'rst_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 12);
@@ -428,7 +431,7 @@ var Cloud = (function() {
             .then(function() { return token; });
         })
         .then(function(token) {
-          if (!token) return; // 前面已经 cb 过了
+          if (!token) return;
           // 3. 用 Resend 发邮件
           var resetUrl = window.location.origin + window.location.pathname + '?reset=' + token;
           var resendKey = (typeof RESEND_KEY !== 'undefined') ? RESEND_KEY : '';
@@ -453,22 +456,22 @@ var Cloud = (function() {
             }).then(function(r) { return r.json(); })
               .then(function(res) {
                 if (res && res.error) throw new Error('resend_fail');
-                cb(null);
+                finish(null);
               })
               .catch(function() {
                 return _authPost('/recover', { email: email }).then(function(r) {
-                  if (_isAuthError(r)) { cb(cloudErr(r)); return; }
-                  cb(null);
+                  if (_isAuthError(r)) { finish(cloudErr(r)); return; }
+                  finish(null);
                 });
               });
           } else {
             return _authPost('/recover', { email: email }).then(function(r) {
-              if (_isAuthError(r)) { cb(cloudErr(r)); return; }
-              cb(null);
+              if (_isAuthError(r)) { finish(cloudErr(r)); return; }
+              finish(null);
             });
           }
         })
-        .catch(function(e) { cb(cloudErr(e)); });
+        .catch(function(e) { finish(cloudErr(e)); });
     });
   }
 
