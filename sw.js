@@ -30,6 +30,10 @@ self.addEventListener('activate', function(e) {
   self.clients.claim();
 });
 
+self.addEventListener('message', function(e) {
+  if (e.data === 'skipWaiting') self.skipWaiting();
+});
+
 // Network First: 优先网络，失败才用缓存
 self.addEventListener('fetch', function(e) {
   e.respondWith(
