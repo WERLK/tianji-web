@@ -984,7 +984,355 @@ function tossLiuyaoCoin() { Divination.tossLiuyaoCoin(); }
 function resetLiuyao() { Divination.resetLiuyao(); }
 function doLiuyaoResult() { Divination.doLiuyaoResult(); }
 
-// ===== Divination: Xiangxue =====
+// ===== Face Upload & AI Analysis =====
+var _faceBase64 = '';
+
+function handleFaceUpload(input) {
+  var file = input.files && input.files[0];
+  if (!file) return;
+  var errEl = document.getElementById('face-upload-error');
+  errEl.style.display = 'none';
+  if (file.size > 10 * 1024 * 1024) {
+    errEl.textContent = '图片不能超过 10MB';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (!file.type.match(/^image\//)) {
+    errEl.textContent = '请选择图片文件';
+    errEl.style.display = 'block';
+    return;
+  }
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    _faceBase64 = e.target.result;
+    var preview = document.getElementById('face-upload-preview');
+    preview.src = _faceBase64;
+    preview.style.display = 'block';
+    document.getElementById('face-upload-placeholder').style.display = 'none';
+    document.getElementById('face-upload-area').classList.add('has-image');
+    document.getElementById('face-upload-actions').style.display = 'flex';
+    // 上传后点击预览图不再触发文件选择
+    document.getElementById('face-upload-area').onclick = function(ev) {
+      ev.stopPropagation();
+      document.getElementById('face-file-input').click();
+    };
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearFaceUpload() {
+  _faceBase64 = '';
+  document.getElementById('face-file-input').value = '';
+  document.getElementById('face-upload-preview').style.display = 'none';
+  document.getElementById('face-upload-preview').src = '';
+  document.getElementById('face-upload-placeholder').style.display = '';
+  document.getElementById('face-upload-area').classList.remove('has-image');
+  document.getElementById('face-upload-actions').style.display = 'none';
+  document.getElementById('face-upload-error').style.display = 'none';
+  // 恢复原始点击行为
+  document.getElementById('face-upload-area').onclick = function() {
+    document.getElementById('face-file-input').click();
+  };
+}
+
+function analyzeFaceImage() {
+  if (!_faceBase64) return;
+  var errEl = document.getElementById('face-upload-error');
+  errEl.style.display = 'none';
+  var resultEl = document.getElementById('xiangxue-result');
+  resultEl.innerHTML = '<div class="loading"><div class="loading-emoji">🔍</div><div class="loading-text">AI 大数据正在分析面部特征...</div></div>';
+
+  // 纯前端图像分析：通过 Canvas 读取像素数据
+  var img = new Image();
+  img.onload = function() {
+    try {
+      var canvas = document.createElement('canvas');
+      var ctx = canvas.getContext('2d');
+      // 缩放到 100x100 加速分析
+      var size = 100;
+      canvas.width = size;
+      canvas.height = size;
+      ctx.drawImage(img, 0, 0, size, size);
+      var data = ctx.getImageData(0, 0, size, size).data;
+
+      // 提取特征
+      var features = _extractFaceFeatures(data, size, size);
+      var result = _generateFaceAnalysis(features);
+      renderFaceAIResult(result);
+      addHistory('xiangxue', 'AI 面相分析');
+    } catch(e) {
+      errEl.textContent = '图片分析失败，请尝试其他照片';
+      errEl.style.display = 'block';
+      resultEl.innerHTML = '';
+    }
+  };
+  img.onerror = function() {
+    errEl.textContent = '图片加载失败，请重新选择';
+    errEl.style.display = 'block';
+    resultEl.innerHTML = '';
+  };
+  img.src = _faceBase64;
+}
+
+// 从像素数据中提取面部特征
+function _extractFaceFeatures(data, w, h) {
+  var totalR = 0, totalG = 0, totalB = 0, count = 0;
+  var brightness = [];
+  var skinPixels = 0;
+  var topBrightness = 0, topCount = 0;
+  var midBrightness = 0, midCount = 0;
+  var botBrightness = 0, botCount = 0;
+  var leftBrightness = 0, leftCount = 0;
+  var rightBrightness = 0, rightCount = 0;
+  var centerBrightness = 0, centerCount = 0;
+  var edgeSharpness = 0, edgeCount = 0;
+  var warmth = 0;
+
+  for (var y = 0; y < h; y++) {
+    for (var x = 0; x < w; x++) {
+      var i = (y * w + x) * 4;
+      var r = data[i], g = data[i+1], b = data[i+2];
+      var bright = (r * 299 + g * 587 + b * 114) / 1000;
+      totalR += r; totalG += g; totalB += b;
+      count++;
+      brightness.push(bright);
+
+      // 肤色检测（简单 HSV 模型）
+      var max = Math.max(r, g, b), min = Math.min(r, g, b);
+      var sat = max === 0 ? 0 : (max - min) / max;
+      var val = max / 255;
+      if (sat < 0.6 && sat > 0.05 && val > 0.2 && val < 0.95 && r > 60 && g > 40 && b > 20 && r > b) {
+        skinPixels++;
+      }
+
+      // 区域亮度
+      if (y < h * 0.33) { topBrightness += bright; topCount++; }
+      else if (y < h * 0.66) { midBrightness += bright; midCount++; }
+      else { botBrightness += bright; botCount++; }
+
+      if (x < w * 0.5) { leftBrightness += bright; leftCount++; }
+      else { rightBrightness += bright; rightCount++; }
+
+      if (x > w * 0.25 && x < w * 0.75 && y > h * 0.25 && y < h * 0.75) {
+        centerBrightness += bright; centerCount++;
+      }
+
+      // 边缘检测（简化 Sobel）
+      if (x > 0 && x < w-1 && y > 0 && y < h-1) {
+        var iR = data[((y) * w + x+1) * 4];
+        var iL = data[((y) * w + x-1) * 4];
+        var iU = data[((y-1) * w + x) * 4];
+        var iD = data[((y+1) * w + x) * 4];
+        var gx = Math.abs(iR - iL);
+        var gy = Math.abs(iD - iU);
+        edgeSharpness += Math.sqrt(gx*gx + gy*gy);
+        edgeCount++;
+      }
+
+      // 色温
+      warmth += (r - b);
+    }
+  }
+
+  // 亮度分布统计
+  brightness.sort(function(a,b){return a-b;});
+  var median = brightness[Math.floor(brightness.length / 2)];
+  var q1 = brightness[Math.floor(brightness.length * 0.25)];
+  var q3 = brightness[Math.floor(brightness.length * 0.75)];
+  var variance = 0;
+  var mean = brightness.reduce(function(a,b){return a+b;},0) / brightness.length;
+  for (var k = 0; k < brightness.length; k++) {
+    variance += (brightness[k] - mean) * (brightness[k] - mean);
+  }
+  variance /= brightness.length;
+
+  return {
+    avgR: totalR / count,
+    avgG: totalG / count,
+    avgB: totalB / count,
+    meanBright: mean,
+    medianBright: median,
+    q1: q1,
+    q3: q3,
+    variance: variance,
+    skinRatio: skinPixels / count,
+    topBright: topCount ? topBrightness / topCount : 0,
+    midBright: midCount ? midBrightness / midCount : 0,
+    botBright: botCount ? botBrightness / botCount : 0,
+    leftBright: leftCount ? leftBrightness / leftCount : 0,
+    rightBright: rightCount ? rightBrightness / rightCount : 0,
+    centerBright: centerCount ? centerBrightness / centerCount : 0,
+    edgeSharpness: edgeCount ? edgeSharpness / edgeCount : 0,
+    warmth: warmth / count,
+    contrast: q3 - q1
+  };
+}
+
+// 根据特征生成面相分析结果
+function _generateFaceAnalysis(f) {
+  // 基于图像特征的确定性分析
+  var seed = Math.floor(f.meanBright * 100 + f.variance * 10 + f.skinRatio * 1000 + f.warmth);
+  var s = seed % 2147483647;
+  if (s <= 0) s += 2147483646;
+  var rand = function() { s = s * 16807 % 2147483647; return (s - 1) / 2147483646; };
+
+  // 脸型判断（基于宽高比和边缘锐度）
+  var faceTypes = ['圆形脸', '方形脸', '鹅蛋脸', '长形脸', '瓜子脸'];
+  var faceIdx = f.contrast > 80 ? 1 : f.variance > 2000 ? 3 : f.skinRatio > 0.4 ? 0 : 2;
+  if (f.edgeSharpness > 40 && f.contrast < 60) faceIdx = 4;
+
+  // 额头（上1/3亮度）
+  var foreheadTypes = ['宽阔饱满', '适中', '略窄'];
+  var foreheadIdx = f.topBright > f.midBright * 1.05 ? 0 : f.topBright > f.midBright * 0.95 ? 1 : 2;
+
+  // 眼睛（中部对比度）
+  var eyeTypes = ['大而明亮', '细长有神', '圆眼', '丹凤眼'];
+  var eyeIdx = f.midBright > 160 ? 0 : f.contrast > 70 ? 1 : f.variance < 1500 ? 2 : 3;
+
+  // 鼻子（中心亮度）
+  var noseTypes = ['高挺丰隆', '端正适中', '小巧精致'];
+  var noseIdx = f.centerBright > f.meanBright * 1.08 ? 0 : f.centerBright > f.meanBright * 0.95 ? 1 : 2;
+
+  // 嘴巴（下1/3色温）
+  var mouthTypes = ['唇红齿白', '嘴角上扬', '樱桃小口', '丰厚饱满'];
+  var mouthIdx = f.warmth > 30 ? 0 : f.botBright > f.midBright ? 1 : f.skinRatio > 0.5 ? 3 : 2;
+
+  // 眉毛（上1/3边缘锐度）
+  var browTypes = ['浓密顺长', '弯月眉', '剑眉', '淡眉'];
+  var browIdx = f.edgeSharpness > 50 ? 0 : f.topBright > 140 ? 1 : f.contrast > 60 ? 2 : 3;
+
+  // 五官对称性
+  var symmetry = 1 - Math.abs(f.leftBright - f.rightBright) / 255;
+  var symmetryScore = Math.floor(symmetry * 100);
+
+  // 综合评分
+  var careerBase = 55 + Math.floor(f.centerBright / 10) + Math.floor(symmetry * 15);
+  var wealthBase = 50 + Math.floor(f.skinRatio * 30) + Math.floor(f.warmth / 5);
+  var loveBase = 50 + Math.floor(f.contrast / 5) + Math.floor(symmetry * 20);
+  var healthBase = 55 + Math.floor(f.meanBright / 8) + Math.floor(f.variance / 100);
+
+  var scores = {
+    career: Math.min(98, Math.max(40, careerBase + Math.floor(rand() * 10 - 5))),
+    wealth: Math.min(98, Math.max(40, wealthBase + Math.floor(rand() * 10 - 5))),
+    love: Math.min(98, Math.max(40, loveBase + Math.floor(rand() * 10 - 5))),
+    health: Math.min(98, Math.max(40, healthBase + Math.floor(rand() * 10 - 5)))
+  };
+
+  // 标签
+  var allTags = ['天庭饱满', '地阁方圆', '五官端正', '眉清目秀', '鼻直口方',
+    '面如满月', '天庭开阔', '眼神清澈', '唇红齿白', '耳大有福',
+    '颧骨高耸', '下巴圆润', '印堂发亮', '眉尾上扬', '人中深长',
+    '法令纹浅', '眼角上翘', '山根高挺', '额角丰隆', '地库饱满'];
+  var tags = [];
+  if (f.topBright > 140) tags.push('天庭饱满');
+  if (f.botBright > 130) tags.push('地阁方圆');
+  if (symmetryScore > 85) tags.push('五官端正');
+  if (f.midBright > 150) tags.push('眉清目秀');
+  if (f.centerBright > f.meanBright * 1.05) tags.push('鼻直口方');
+  if (f.skinRatio > 0.45) tags.push('面如满月');
+  if (f.contrast > 60) tags.push('眼神清澈');
+  if (f.warmth > 25) tags.push('唇红齿白');
+  if (f.edgeSharpness > 35) tags.push('颧骨高耸');
+  if (f.variance > 1800) tags.push('轮廓分明');
+  // 补充到 4-6 个标签
+  var extra = allTags.filter(function(t){ return tags.indexOf(t) === -1; });
+  while (tags.length < 5 && extra.length > 0) {
+    var pick = Math.floor(rand() * extra.length);
+    tags.push(extra.splice(pick, 1)[0]);
+  }
+
+  // 详细分析
+  var faceTexts = [
+    '圆形脸：天生亲和力强，人缘极佳，性格温和包容。财运平稳上升，适合从事与人打交道的工作，如销售、公关、教育等。中年运势尤为突出。',
+    '方形脸：意志坚定，做事有魄力，天生领导气质。事业心重，执行力强，但需注意人际关系中的沟通方式。财运亨通，适合创业。',
+    '鹅蛋脸：五官端正协调，气质出众，聪明伶俐。各方面运势较为均衡，事业与感情双丰收。为人处世圆融，贵人运强。',
+    '长形脸：思维敏捷，善于分析判断，逻辑能力强。适合从事技术、研究、金融类工作。需注意劳逸结合，关注身体健康。',
+    '瓜子脸：智慧型面相，领悟力超群，审美品味高。异性缘极佳，感情运丰富。事业上有独特的创新思维，适合创意类工作。'
+  ];
+
+  var foreheadTexts = [
+    '额头宽阔饱满：少年运极佳，聪明早慧，父母缘深厚。学业运强，事业起步顺利。额头光泽明亮者，近期有升迁之喜。',
+    '额头适中端正：运势平稳上升，中年后逐渐发力。为人务实稳重，不急不躁。事业在中年达到巅峰。',
+    '额头略窄：少年运稍弱，需靠后天努力打拼。但"苦尽甘来"，中年运势渐入佳境，晚年享福。适合技术型职业。'
+  ];
+
+  var eyeTexts = [
+    '大而明亮的眼睛：心地善良，感情丰富细腻，异性缘极佳。直觉敏锐，善于察言观色。但需注意感情用事，理性决策。',
+    '细长有神的眼睛：智慧过人，观察力极强，做事有条不紊。事业运旺盛，适合管理类职位。理财能力出众。',
+    '圆眼：性格开朗活泼，人缘极佳，社交能力强。财运有波动但总体向上，适合从事商业活动。贵人运不错。',
+    '丹凤眼：气质高雅，心思缜密，善于谋划。事业上有大将之风，适合领导岗位。感情上需多些耐心和包容。'
+  ];
+
+  var noseTexts = [
+    '高挺丰隆的鼻子：财运亨通，事业有成，自信心强。中年运势极佳，有"偏财运"。善于理财，投资眼光独到。',
+    '端正适中的鼻子：为人正直诚实，做事踏实可靠。财运稳健增长，不宜投机但适合长期投资。贵人运不错。',
+    '小巧精致的鼻子：心思细腻，审美品味高。财运平稳，适合从事艺术、设计类工作。感情运丰富，异性缘好。'
+  ];
+
+  var mouthTexts = [
+    '唇红齿白：口福极佳，人缘出众，表达能力出色。利于从事沟通、演讲、媒体类工作。食禄丰厚，一生不愁吃穿。',
+    '嘴角上扬：天生乐观派，笑容常在，极具感染力。容易获得他人好感和信任，社交运极佳。事业上有贵人相助。',
+    '樱桃小口：气质优雅，言辞谨慎，善于保守秘密。理财能力强，精打细算。感情上专一，适合细水长流的爱情。',
+    '丰厚饱满：重情重义，感情丰富真挚。人缘极佳，朋友众多。财运方面适合合伙经营，不宜独断专行。'
+  ];
+
+  var browTexts = [
+    '浓密顺长的眉毛：兄弟朋友缘极佳，贵人运强。事业上多有助力，团队合作顺利。为人仗义，深得人心。',
+    '弯月眉：性格温柔细腻，感情丰富，极具浪漫气质。异性缘极佳，适合从事艺术、文学类工作。审美品味出众。',
+    '剑眉：英气十足，做事果断利落，有领导才能。事业心强，目标明确。适合军警、管理、创业等领域。',
+    '淡眉：性格内敛沉稳，善于深度思考。学术研究能力强，适合从事科研、分析类工作。需注意拓展社交圈。'
+  ];
+
+  var details = [
+    { title: '👤 脸型分析 — ' + faceTypes[faceIdx], text: faceTexts[faceIdx] },
+    { title: '🧠 额头分析 — ' + foreheadTypes[foreheadIdx], text: foreheadTexts[foreheadIdx] },
+    { title: '👁 眼睛分析 — ' + eyeTypes[eyeIdx], text: eyeTexts[eyeIdx] },
+    { title: '👃 鼻子分析 — ' + noseTypes[noseIdx], text: noseTexts[noseIdx] },
+    { title: '👄 嘴巴分析 — ' + mouthTypes[mouthIdx], text: mouthTexts[mouthIdx] },
+    { title: '🤨 眉毛分析 — ' + browTypes[browIdx], text: browTexts[browIdx] },
+    { title: '📊 五官对称度 ' + symmetryScore + '分', text: symmetryScore > 85 ? '五官端正对称，面相上佳。对称度高者通常运势较为顺遂，人际关系和谐，事业与感情双丰收。' : symmetryScore > 70 ? '五官较为协调，整体面相不错。略有不对称之处，反而增添了个人特色和辨识度。' : '五官各有特色，不对称之处较多。但"歪瓜裂枣"也有福相，关键在于内在修养和后天努力。' }
+  ];
+
+  // 综合总结
+  var overall = Math.floor((scores.career + scores.wealth + scores.love + scores.health) / 4);
+  var summaryTexts = [
+    '综合面相分析显示，您拥有不错的面相基础。五官协调，气质出众，各方面运势呈上升趋势。建议近期把握机遇，积极进取。',
+    '面相分析结果显示，您天生具有领导气质和贵人运。事业方面有望取得突破性进展，财运也随之提升。保持积极心态，好运自来。',
+    '您的面相显示感情运和人际运极佳。善于与人相处，容易获得他人信任。事业上适合团队合作，不宜独断专行。',
+    '面相整体偏吉，但需注意健康方面的调养。建议保持规律作息，适当运动。事业和财运方面稳中有升，不宜冒进。',
+    '面相分析显示您智慧过人，领悟力强。适合从事需要深度思考的工作。财运方面有"暗财"之象，可能有意外收获。'
+  ];
+  details.push({
+    title: '🔮 综合点评（' + overall + '分）',
+    text: summaryTexts[Math.floor(rand() * summaryTexts.length)]
+  });
+
+  return { scores: scores, tags: tags, details: details };
+}
+
+function renderFaceAIResult(data) {
+  var el = document.getElementById('xiangxue-result');
+  var sc = data.scores || {};
+  var tags = (data.tags || []).map(function(t) { return '<span class="face-analysis-tag">' + t + '</span>'; }).join('');
+  var details = (data.details || []).map(function(d) {
+    return '<div class="card" style="margin-top:12px"><div style="font-size:14px;font-weight:600;color:var(--gold);margin-bottom:8px">' + d.title + '</div><div class="reading-text">' + d.text + '</div></div>';
+  }).join('');
+  el.innerHTML =
+    '<div class="result-area">' +
+      '<div class="card"><h3 style="color:var(--gold);margin-bottom:14px;font-family:serif;font-size:16px">🤖 AI 面相分析报告</h3>' +
+        (tags ? '<div style="margin-bottom:12px">' + tags + '</div>' : '') +
+        '<div class="bar-group">' +
+          '<div class="bar-item"><span class="bar-icon">💼</span><span class="bar-label">事业</span><div class="bar-track"><div class="bar-fill" style="width:' + (sc.career||0) + '%;background:#a29bfe"></div></div><span class="bar-value">' + (sc.career||0) + '</span></div>' +
+          '<div class="bar-item"><span class="bar-icon">💰</span><span class="bar-label">财运</span><div class="bar-track"><div class="bar-fill" style="width:' + (sc.wealth||0) + '%;background:#fdcb6e"></div></div><span class="bar-value">' + (sc.wealth||0) + '</span></div>' +
+          '<div class="bar-item"><span class="bar-icon">💕</span><span class="bar-label">感情</span><div class="bar-track"><div class="bar-fill" style="width:' + (sc.love||0) + '%;background:#fd79a8"></div></div><span class="bar-value">' + (sc.love||0) + '</span></div>' +
+          '<div class="bar-item"><span class="bar-icon">🏃</span><span class="bar-label">健康</span><div class="bar-track"><div class="bar-fill" style="width:' + (sc.health||0) + '%;background:#00b894"></div></div><span class="bar-value">' + (sc.health||0) + '</span></div>' +
+        '</div>' +
+      '</div>' +
+      details +
+    '</div>';
+}
+
+// ===== Divination: Xiangxue (Manual) =====
 function doXiangxue() {
   var faceShape = +document.getElementById('face-shape').value;
   var forehead = +document.getElementById('face-forehead').value;

@@ -560,6 +560,41 @@ body {
 .loading { text-align: center; padding: 40px 20px; }
 .loading-emoji { font-size: 40px; animation: pulse 1.2s ease infinite; }
 .loading-text { color: var(--text-muted); font-size: 13px; margin-top: 8px; }
+
+/* ===== Face Upload ===== */
+.face-upload-area {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 28px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--bg-secondary);
+  position: relative;
+}
+.face-upload-area:active {
+  border-color: var(--gold);
+  background: var(--bg-card-hover);
+}
+.face-upload-area.has-image {
+  padding: 12px;
+  border-style: solid;
+  border-color: var(--gold-dark);
+}
+#face-upload-actions {
+  display: flex;
+  gap: 8px;
+}
+.face-analysis-tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  margin: 2px;
+  background: rgba(212,168,83,0.12);
+  color: var(--gold-light);
+  border: 1px solid rgba(212,168,83,0.2);
+}
 @keyframes pulse {
   0%, 100% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.15); opacity: 0.7; }
